@@ -12,6 +12,7 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   onAddChild: () => void;
+  onDeleteAccount: () => void;
   onShowStub: (title: string) => void;
 };
 
@@ -19,6 +20,7 @@ export function SettingsModal({
   visible,
   onClose,
   onAddChild,
+  onDeleteAccount,
   onShowStub,
 }: Props) {
   const items = [
@@ -46,6 +48,11 @@ export function SettingsModal({
       title: "📄 法的情報",
       subtitle: "プライバシーポリシー・利用規約",
       onPress: () => onShowStub("法的情報"),
+    },
+    {
+      title: "🗑️ アカウントの削除",
+      subtitle: "保存されているデータをすべて削除する",
+      onPress: onDeleteAccount,
     },
   ];
 

@@ -31,6 +31,7 @@ import {
   normalizeChildForCurrentYear,
 } from "./services/santa";
 import {
+  clearStoredAppData,
   loadActiveChildId,
   loadChildren,
   saveActiveChildId,
@@ -246,8 +247,68 @@ export default function App() {
     setActiveChildId(childId);
   }
 
+  function handleRemoveWishlistItem(item: string) {
+    if (!activeChild) {
+      return;
+    }
+
+    Alert.alert(
+      "ほしいものを削除",
+      `「${item}」をほしいものから削除しますか？`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除する",
+          style: "destructive",
+          onPress: () =>
+            setChildren((prev) =>
+              prev.map((child) => {
+                if (child.id !== activeChild.id) {
+                  return child;
+                }
+
+                return {
+                  ...child,
+                  wishlist: child.wishlist.filter((wishlistItem) => wishlistItem !== item),
+                };
+              }),
+            ),
+        },
+      ],
+    );
+  }
+
   function showStubAlert(title: string) {
     Alert.alert(title, "このきのうはじゅんびちゅうです");
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "アカウントを削除",
+      "保存されているお子様情報、会話、ポイント、お願いしたいものをすべて削除します。",
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除する",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await clearStoredAppData();
+                setChildren([]);
+                setActiveChildId(null);
+                setActiveModal(null);
+                setShowAddChildModal(false);
+                setPendingAddChildModal(false);
+                setStorageError(null);
+              } catch (error) {
+                setStorageError("アカウントの削除に失敗しました");
+              }
+            })();
+          },
+        },
+      ],
+    );
   }
 
   if (loading || !fontsLoaded) {
@@ -282,6 +343,7 @@ export default function App() {
             activeChild={activeChild}
             children={children}
             unreadCount={unreadCount}
+            onRemoveWishlistItem={handleRemoveWishlistItem}
             onOpenLetters={() => setActiveModal("letters")}
             onOpenSettings={() => setActiveModal("settings")}
             onOpenTalk={() => setActiveModal("talk")}
@@ -304,6 +366,7 @@ export default function App() {
             visible={activeModal === "settings"}
             onClose={() => setActiveModal(null)}
             onAddChild={handleAddChildFromSettings}
+            onDeleteAccount={handleDeleteAccount}
             onShowStub={showStubAlert}
           />
           <Modal

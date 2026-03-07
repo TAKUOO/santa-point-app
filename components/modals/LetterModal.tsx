@@ -18,7 +18,7 @@ type Props = {
 };
 
 export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
-  const [selectedLetterId, setSelectedLetterId] = useState<string | null>(null);
+  const [expandedLetterId, setExpandedLetterId] = useState<string | null>(null);
 
   const sortedLetters = useMemo(
     () =>
@@ -29,16 +29,23 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
   );
 
   useEffect(() => {
-    setSelectedLetterId(sortedLetters[0]?.id ?? null);
+    if (visible) {
+      setExpandedLetterId((currentExpandedLetterId) =>
+        currentExpandedLetterId &&
+        sortedLetters.some((letter) => letter.id === currentExpandedLetterId)
+          ? currentExpandedLetterId
+          : null,
+      );
+    }
   }, [sortedLetters, visible]);
 
-  const selectedLetter =
-    sortedLetters.find((letter) => letter.id === selectedLetterId) ?? sortedLetters[0];
+  const latestLetter = sortedLetters[0];
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
+      <View style={styles.backdrop}>
+        <Pressable style={styles.backdropTapArea} onPress={onClose} />
+        <View style={styles.card}>
           <View style={styles.header}>
             <View style={styles.headerSpacer} />
             <Text style={styles.title}>サンタからのおてがみ</Text>
@@ -48,30 +55,26 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
           </View>
 
           <ScrollView style={styles.scroll}>
-            {selectedLetter ? (
+            {latestLetter ? (
               <>
                 <Pressable
                   style={styles.mainCard}
-                  onPress={() => onMarkRead(selectedLetter.id)}
+                  onPress={() => onMarkRead(latestLetter.id)}
                 >
+                  <Text style={styles.snowflakePrimary}>❄︎</Text>
+                  <Text style={styles.snowflakeSecondary}>❄︎</Text>
+                  <Text style={styles.snowflakeTertiary}>✦</Text>
                   <View style={styles.mainCardHeader}>
-                    {!selectedLetter.isRead ? (
-                      <View style={styles.newBadge}>
-                        <Text style={styles.newBadgeText}>新</Text>
-                      </View>
-                    ) : null}
-                    <Text style={styles.newLabel}>
-                      {!selectedLetter.isRead ? "あたらしい！" : ""}
-                    </Text>
+                    <View style={styles.mainCardHeaderSpacer} />
                     <Text style={styles.dateText}>
-                      {new Date(selectedLetter.date).toLocaleDateString("ja-JP", {
+                      {new Date(latestLetter.date).toLocaleDateString("ja-JP", {
                         month: "long",
                         day: "numeric",
                       })}
                     </Text>
                   </View>
-                  <Text style={styles.mainTitle}>{selectedLetter.title}</Text>
-                  <Text style={styles.mainBody}>{selectedLetter.body}</Text>
+                  <Text style={styles.mainTitle}>{latestLetter.title}</Text>
+                  <Text style={styles.mainBody}>{latestLetter.body}</Text>
                   <Text style={styles.mainSign}>サンタクロースより</Text>
                 </Pressable>
 
@@ -79,23 +82,38 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
                   <>
                     <Text style={styles.historyLabel}>これまでのおてがみ</Text>
                     {sortedLetters
-                      .filter((letter) => letter.id !== selectedLetter.id)
+                      .filter((letter) => letter.id !== latestLetter.id)
                       .map((letter) => (
                       <Pressable
                         key={letter.id}
                         style={styles.historyCard}
                         onPress={() => {
-                          setSelectedLetterId(letter.id);
+                          setExpandedLetterId((currentExpandedLetterId) =>
+                            currentExpandedLetterId === letter.id ? null : letter.id,
+                          );
                           onMarkRead(letter.id);
                         }}
                       >
-                        <Text style={styles.historyTitle}>{letter.title}</Text>
-                        <Text style={styles.historyPreview} numberOfLines={1}>
-                          {letter.body}
-                        </Text>
-                        <Text style={styles.historyDate}>
-                          {new Date(letter.date).toLocaleDateString("ja-JP")}
-                        </Text>
+                        <View style={styles.historyHeader}>
+                          <View style={styles.historyTextBlock}>
+                            <Text style={styles.historyTitle}>{letter.title}</Text>
+                            <Text style={styles.historyDate}>
+                              {new Date(letter.date).toLocaleDateString("ja-JP")}
+                            </Text>
+                          </View>
+                          <MaterialIcons
+                            name={expandedLetterId === letter.id ? "expand-less" : "expand-more"}
+                            size={20}
+                            color="#FFFFFF88"
+                          />
+                        </View>
+                        {expandedLetterId === letter.id ? (
+                          <Text style={styles.historyBody}>{letter.body}</Text>
+                        ) : (
+                          <Text style={styles.historyPreview} numberOfLines={1}>
+                            {letter.body}
+                          </Text>
+                        )}
                       </Pressable>
                       ))}
                   </>
@@ -105,8 +123,8 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
               <Text style={styles.emptyText}>まだおてがみはないよ</Text>
             )}
           </ScrollView>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -116,6 +134,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#00000088",
     justifyContent: "flex-end",
+  },
+  backdropTapArea: {
+    ...StyleSheet.absoluteFillObject,
   },
   card: {
     height: "93%",
@@ -155,52 +176,61 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   mainCard: {
-    backgroundColor: "#F5F0EB",
+    backgroundColor: "#2A2460",
     borderRadius: 24,
     padding: 24,
     gap: 16,
     marginBottom: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#FFFFFF14",
+  },
+  snowflakePrimary: {
+    position: "absolute",
+    top: 18,
+    right: 22,
+    fontSize: 42,
+    color: "#FFFFFF14",
+  },
+  snowflakeSecondary: {
+    position: "absolute",
+    bottom: 20,
+    left: 18,
+    fontSize: 32,
+    color: "#FFFFFF12",
+  },
+  snowflakeTertiary: {
+    position: "absolute",
+    top: 62,
+    left: 28,
+    fontSize: 18,
+    color: "#FFFFFF10",
   },
   mainCardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
   },
-  newBadge: {
-    backgroundColor: "#FFE6E6",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  newBadgeText: {
-    color: "#D43D2F",
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-  },
-  newLabel: {
-    color: "#2C1810",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+  mainCardHeaderSpacer: {
     flex: 1,
   },
   dateText: {
-    color: "#A08878",
+    color: "#FFFFFFAA",
     fontSize: 11,
     fontFamily: "Inter_400Regular",
   },
   mainTitle: {
-    color: "#2C1810",
+    color: "#FFFFFF",
     fontSize: 20,
     fontFamily: "PlusJakartaSans_700Bold",
   },
   mainBody: {
-    color: "#2C1810",
+    color: "#FFFFFFE5",
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     lineHeight: 22,
   },
   mainSign: {
-    color: "#D43D2F",
+    color: "#FFFFFFCC",
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
     textAlign: "right",
@@ -219,6 +249,16 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
+  historyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  historyTextBlock: {
+    flex: 1,
+    gap: 4,
+  },
   historyTitle: {
     color: "#FFFFFF",
     fontSize: 13,
@@ -233,6 +273,12 @@ const styles = StyleSheet.create({
     color: "#FFFFFF55",
     fontSize: 11,
     fontFamily: "Inter_400Regular",
+  },
+  historyBody: {
+    color: "#FFFFFFCC",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 20,
   },
   emptyText: {
     color: "#FFFFFF66",

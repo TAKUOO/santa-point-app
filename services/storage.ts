@@ -29,3 +29,7 @@ export async function loadActiveChildId(): Promise<string | null> {
 export async function saveActiveChildId(childId: string): Promise<void> {
   await AsyncStorage.setItem(ACTIVE_CHILD_ID_KEY, childId);
 }
+
+export async function clearStoredAppData(): Promise<void> {
+  await AsyncStorage.multiRemove([CHILDREN_KEY, ACTIVE_CHILD_ID_KEY]);
+}

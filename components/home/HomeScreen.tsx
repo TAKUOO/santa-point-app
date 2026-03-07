@@ -12,6 +12,7 @@ type Props = {
   activeChild: Child;
   children: Child[];
   unreadCount: number;
+  onRemoveWishlistItem: (item: string) => void;
   onOpenLetters: () => void;
   onOpenSettings: () => void;
   onOpenTalk: () => void;
@@ -22,6 +23,7 @@ export function HomeScreen({
   activeChild,
   children,
   unreadCount,
+  onRemoveWishlistItem,
   onOpenLetters,
   onOpenSettings,
   onOpenTalk,
@@ -55,7 +57,7 @@ export function HomeScreen({
         {unreadCount > 0 ? (
           <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
             <Text style={styles.letterEmoji}>📩</Text>
-            <Text style={styles.letterBubbleText}>サンタさんからおてがみだよ！</Text>
+            <Text style={styles.letterBubbleText}>サンタからお手紙が届いたよ！</Text>
           </Pressable>
         ) : null}
 
@@ -78,7 +80,7 @@ export function HomeScreen({
           <Text style={styles.roomStateText}>サンタさんは{roomLabel}</Text>
         </View>
 
-        <WishListCard items={activeChild.wishlist} />
+        <WishListCard items={activeChild.wishlist} onRemoveItem={onRemoveWishlistItem} />
 
         <Pressable style={styles.talkButton} onPress={onOpenTalk}>
           <MaterialIcons name="mic" size={24} color="#FFFFFF" />
