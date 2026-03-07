@@ -17,6 +17,7 @@ import { HomeScreen } from "./components/home/HomeScreen";
 import { LetterModal } from "./components/modals/LetterModal";
 import { SettingsModal } from "./components/modals/SettingsModal";
 import { TalkModal } from "./components/modals/TalkModal";
+import { ChildEditorModal } from "./components/modals/ChildEditorModal";
 import { SANTAS } from "./constants/santas";
 import { calculateMedalCount } from "./constants/medals";
 import {
@@ -39,7 +40,8 @@ import {
 } from "./services/storage";
 import { ChatMessage, Child } from "./types";
 
-type ActiveModal = "talk" | "letters" | "settings" | null;
+type ActiveModal = "talk" | "letters" | null;
+type ActiveScreen = "home" | "settings";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -53,8 +55,10 @@ export default function App() {
   const [children, setChildren] = useState<Child[]>([]);
   const [activeChildId, setActiveChildId] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>("home");
   const [showAddChildModal, setShowAddChildModal] = useState(false);
-  const [pendingAddChildModal, setPendingAddChildModal] = useState(false);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
+  const [pendingEditChildId, setPendingEditChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -120,15 +124,19 @@ export default function App() {
   }, [activeChildId]);
 
   useEffect(() => {
-    if (pendingAddChildModal && activeModal === null) {
-      setShowAddChildModal(true);
-      setPendingAddChildModal(false);
+    if (pendingEditChildId && activeModal === null) {
+      setEditingChildId(pendingEditChildId);
+      setPendingEditChildId(null);
     }
-  }, [activeModal, pendingAddChildModal]);
+  }, [activeModal, pendingEditChildId]);
 
   const activeChild = useMemo(
     () => children.find((child) => child.id === activeChildId) ?? null,
     [activeChildId, children],
+  );
+  const editingChild = useMemo(
+    () => children.find((child) => child.id === editingChildId) ?? null,
+    [children, editingChildId],
   );
 
   const unreadCount = activeChild?.letters.filter((letter) => !letter.isRead).length ?? 0;
@@ -152,12 +160,30 @@ export default function App() {
     setChildren((prev) => [...prev, child]);
     setActiveChildId(child.id);
     setShowAddChildModal(false);
-    setActiveModal(null);
   }
 
   function handleAddChildFromSettings() {
-    setPendingAddChildModal(true);
+    setShowAddChildModal(true);
+  }
+
+  function handleStartEditChild(childId: string) {
+    setPendingEditChildId(childId);
     setActiveModal(null);
+  }
+
+  function handleSaveChildEdits(childId: string, name: string, birthdate: string) {
+    setChildren((prev) =>
+      prev.map((child) =>
+        child.id === childId
+          ? {
+              ...child,
+              name,
+              birthdate,
+            }
+          : child,
+      ),
+    );
+    setEditingChildId(null);
   }
 
   function handleSendReport(text: string) {
@@ -298,13 +324,46 @@ export default function App() {
                 setChildren([]);
                 setActiveChildId(null);
                 setActiveModal(null);
+                setActiveScreen("home");
                 setShowAddChildModal(false);
-                setPendingAddChildModal(false);
+                setEditingChildId(null);
+                setPendingEditChildId(null);
                 setStorageError(null);
               } catch (error) {
                 setStorageError("アカウントの削除に失敗しました");
               }
             })();
+          },
+        },
+      ],
+    );
+  }
+
+  function handleDeleteChild(childId: string) {
+    const targetChild = children.find((child) => child.id === childId);
+    if (!targetChild) {
+      return;
+    }
+
+    Alert.alert(
+      "お子様を削除",
+      `「${targetChild.name}」の情報を削除しますか？`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除する",
+          style: "destructive",
+          onPress: () => {
+            setChildren((prev) => {
+              const nextChildren = prev.filter((child) => child.id !== childId);
+              const nextActiveChildId =
+                activeChildId === childId ? nextChildren[0]?.id ?? null : activeChildId;
+              setActiveChildId(nextActiveChildId);
+              if (nextChildren.length === 0) {
+                setActiveScreen("home");
+              }
+              return nextChildren;
+            });
           },
         },
       ],
@@ -339,16 +398,28 @@ export default function App() {
         <OnboardingFlow onCreateChild={handleCreateChild} />
       ) : activeChild ? (
         <>
-          <HomeScreen
-            activeChild={activeChild}
-            children={children}
-            unreadCount={unreadCount}
-            onRemoveWishlistItem={handleRemoveWishlistItem}
-            onOpenLetters={() => setActiveModal("letters")}
-            onOpenSettings={() => setActiveModal("settings")}
-            onOpenTalk={() => setActiveModal("talk")}
-            onSelectChild={handleSelectChild}
-          />
+          {activeScreen === "home" ? (
+            <HomeScreen
+              activeChild={activeChild}
+              children={children}
+              unreadCount={unreadCount}
+              onRemoveWishlistItem={handleRemoveWishlistItem}
+              onOpenLetters={() => setActiveModal("letters")}
+              onOpenSettings={() => setActiveScreen("settings")}
+              onOpenTalk={() => setActiveModal("talk")}
+              onSelectChild={handleSelectChild}
+            />
+          ) : (
+            <SettingsModal
+              children={children}
+              onClose={() => setActiveScreen("home")}
+              onAddChild={handleAddChildFromSettings}
+              onDeleteChild={handleDeleteChild}
+              onEditChild={handleStartEditChild}
+              onDeleteAccount={handleDeleteAccount}
+              onShowStub={showStubAlert}
+            />
+          )}
 
           <TalkModal
             child={activeChild}
@@ -362,12 +433,11 @@ export default function App() {
             onClose={() => setActiveModal(null)}
             onMarkRead={handleMarkLetterRead}
           />
-          <SettingsModal
-            visible={activeModal === "settings"}
-            onClose={() => setActiveModal(null)}
-            onAddChild={handleAddChildFromSettings}
-            onDeleteAccount={handleDeleteAccount}
-            onShowStub={showStubAlert}
+          <ChildEditorModal
+            child={editingChild}
+            visible={editingChildId !== null}
+            onClose={() => setEditingChildId(null)}
+            onSave={handleSaveChildEdits}
           />
           <Modal
             animationType="slide"
