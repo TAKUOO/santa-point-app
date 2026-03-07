@@ -21,6 +21,7 @@ type Props = {
 export function TalkModal({ child, visible, onClose, onSend }: Props) {
   const [draft, setDraft] = useState("");
   const [showComposer, setShowComposer] = useState(false);
+  const [showThread, setShowThread] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
     if (!visible) {
       setShowComposer(false);
       setDraft("");
+      setShowThread(false);
     }
   }, [visible]);
 
@@ -51,6 +53,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
     onSend(trimmed);
     setDraft("");
     setShowComposer(false);
+    setShowThread(true);
   }
 
   return (
@@ -58,26 +61,30 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
           <View style={styles.header}>
-            <View style={styles.spacer} />
+            <Pressable
+              style={styles.threadButton}
+              onPress={() => setShowThread((current) => !current)}
+            >
+              <MaterialIcons
+                name={showThread ? "arrow-back" : "history"}
+                size={18}
+                color="#FFFFFFCC"
+              />
+            </Pressable>
             <Text style={styles.title}>サンタとはなす</Text>
             <Pressable style={styles.backButton} onPress={onClose}>
               <MaterialIcons name="close" size={20} color="#FFFFFF" />
             </Pressable>
           </View>
 
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarEmoji}>{child.assignedSanta.emoji}</Text>
-            </View>
-          </View>
-
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.chatScroll}
-            contentContainerStyle={styles.chatContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {child.chatHistory.map((message) =>
+          {showThread ? (
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.chatScroll}
+              contentContainerStyle={styles.chatContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {child.chatHistory.map((message) =>
                 message.role === "santa" ? (
                   <View key={message.id} style={styles.santaMessageWrap}>
                     <View style={styles.speechBubble}>
@@ -96,7 +103,20 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
                   </View>
                 ),
               )}
-          </ScrollView>
+            </ScrollView>
+          ) : (
+            <View style={styles.startState}>
+              <View style={styles.avatarWrap}>
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarEmoji}>{child.assignedSanta.emoji}</Text>
+                </View>
+              </View>
+              <Text style={styles.startStateTitle}>サンタさんとお話しよう</Text>
+              <Text style={styles.startStateText}>
+                出来たことや欲しいものをサンタさんに話してみよう
+              </Text>
+            </View>
+          )}
         </Pressable>
 
         <View pointerEvents="box-none" style={styles.fixedActionArea}>
@@ -180,13 +200,12 @@ const styles = StyleSheet.create({
   },
   avatarWrap: {
     alignItems: "center",
-    gap: 8,
-    paddingBottom: 12,
+    marginBottom: 8,
   },
   avatarCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     backgroundColor: "#FFFFFF15",
     justifyContent: "center",
     alignItems: "center",
@@ -194,7 +213,38 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF22",
   },
   avatarEmoji: {
-    fontSize: 42,
+    fontSize: 64,
+  },
+  startState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    paddingBottom: 140,
+    gap: 12,
+  },
+  startStateTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontFamily: "PlusJakartaSans_700Bold",
+    textAlign: "center",
+  },
+  startStateText: {
+    color: "#FFFFFFB8",
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  threadButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF12",
+    borderWidth: 1,
+    borderColor: "#FFFFFF18",
+    alignItems: "center",
+    justifyContent: "center",
   },
   chatScroll: {
     flex: 1,
