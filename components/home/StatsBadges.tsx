@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { getCurrentMedalRank } from "../../constants/medals";
 
 type Props = {
   daysUntilChristmas: number;
@@ -11,6 +12,8 @@ export function StatsBadges({
   medalCount,
   pointsThisYear,
 }: Props) {
+  const currentRank = getCurrentMedalRank(medalCount);
+
   return (
     <View style={styles.statusBlock}>
       <View style={styles.statusColumn}>
@@ -34,11 +37,11 @@ export function StatsBadges({
       <View style={styles.separator} />
 
       <View style={styles.statusColumn}>
-        <View style={styles.numberRow}>
-          <Text style={styles.value}>{medalCount}</Text>
-          <Text style={styles.mutedUnit}>/100</Text>
+        <View style={styles.rankRow}>
+          <Text style={styles.rankIcon}>{currentRank.icon}</Text>
+          <Text style={styles.rankName}>{currentRank.name}</Text>
         </View>
-        <Text style={styles.label}>🎅メダル</Text>
+        <Text style={styles.label}>🎅ランク</Text>
       </View>
     </View>
   );
@@ -75,11 +78,19 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     marginBottom: 4,
   },
-  mutedUnit: {
-    color: "#FFFFFF55",
-    fontSize: 13,
+  rankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 2,
+  },
+  rankIcon: {
+    fontSize: 24,
+  },
+  rankName: {
+    color: "#FFFFFF",
+    fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    marginBottom: 4,
   },
   label: {
     color: "#FFFFFF55",

@@ -18,7 +18,7 @@ import { LetterModal } from "./components/modals/LetterModal";
 import { SettingsModal } from "./components/modals/SettingsModal";
 import { TalkModal } from "./components/modals/TalkModal";
 import { ChildEditorModal } from "./components/modals/ChildEditorModal";
-import { SANTAS } from "./constants/santas";
+import { MEDAL_SANTA_IDS } from "./constants/santas";
 import { calculateMedalCount } from "./constants/medals";
 import {
   assignSanta,
@@ -216,20 +216,11 @@ export default function App() {
         const nextAllTime = normalizedChild.pointsAllTime + points;
         const nextMedalCount = calculateMedalCount(nextAllTime);
         const wishlistCandidate = extractWishlistItem(text);
-        const existingMedalSet = new Set(normalizedChild.medals);
-        const availableMedals = SANTAS.filter((santa) => !existingMedalSet.has(santa.id)).map(
-          (santa) => santa.id,
-        );
-        const nextMedals = [...normalizedChild.medals];
+        const nextMedals = MEDAL_SANTA_IDS.slice(0, nextMedalCount);
         const nextWishlist =
           wishlistCandidate && !normalizedChild.wishlist.includes(wishlistCandidate)
             ? [...normalizedChild.wishlist, wishlistCandidate]
             : normalizedChild.wishlist;
-
-        while (nextMedals.length < nextMedalCount && availableMedals.length > 0) {
-          const pickIndex = Math.floor(Math.random() * availableMedals.length);
-          nextMedals.push(availableMedals.splice(pickIndex, 1)[0]);
-        }
 
         return {
           ...normalizedChild,

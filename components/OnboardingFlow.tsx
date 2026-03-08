@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -8,9 +8,7 @@ import {
   View,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { assignSanta } from "../services/santa";
-
-type OnboardingStep = "choice" | "input" | "reveal";
+type OnboardingStep = "choice" | "input";
 
 type Props = {
   mode?: "initial" | "addChild";
@@ -34,15 +32,7 @@ export function OnboardingFlow({
     setBirthdate("");
   }, [mode]);
 
-  const assignedSanta = useMemo(() => {
-    if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
-      return null;
-    }
-
-    return assignSanta(name.trim(), birthdate);
-  }, [birthdate, name]);
-
-  function handleNext() {
+  function handleSubmit() {
     if (!name.trim()) {
       Alert.alert("名前を入力してください");
       return;
@@ -53,7 +43,7 @@ export function OnboardingFlow({
       return;
     }
 
-    setStep("reveal");
+    handleFinish();
   }
 
   function handleFinish() {
@@ -110,7 +100,7 @@ export function OnboardingFlow({
               isAddChildMode ? styles.addChildSubtitle : null,
             ]}
           >
-            名前と誕生日を入力すると{"\n"}あなただけのサンタさんが決まります
+            名前と誕生日を入力すると{"\n"}あかいサンタさんがみまもってくれるよ
           </Text>
           <TextInput
             value={name}
@@ -126,7 +116,7 @@ export function OnboardingFlow({
             placeholderTextColor="#FFFFFF44"
             style={styles.input}
           />
-          <Pressable style={[styles.primaryButton, styles.submitButton]} onPress={handleNext}>
+          <Pressable style={[styles.primaryButton, styles.submitButton]} onPress={handleSubmit}>
             <Text style={styles.primaryButtonText}>登録する</Text>
           </Pressable>
           {mode === "addChild" ? (
@@ -138,28 +128,6 @@ export function OnboardingFlow({
               <Text style={styles.ghostButtonText}>戻る</Text>
             </Pressable>
           )}
-        </View>
-      ) : null}
-
-      {step === "reveal" && assignedSanta ? (
-        <View
-          style={[
-            styles.content,
-            isAddChildMode ? styles.addChildCenteredContent : null,
-          ]}
-        >
-          <Text style={styles.title}>あなただけのサンタさん！</Text>
-          <View style={styles.revealCard}>
-            <Text style={styles.revealEmoji}>{assignedSanta.emoji}</Text>
-            <Text style={styles.revealName}>{assignedSanta.name}</Text>
-            <Text style={styles.revealMessage}>「{assignedSanta.message}」</Text>
-          </View>
-          <Text style={styles.subtitle}>
-            このサンタさんが{name.trim()}ちゃんの{"\n"}4ねんかんをみまもってくれるよ！
-          </Text>
-          <Pressable style={styles.primaryButton} onPress={handleFinish}>
-            <Text style={styles.primaryButtonText}>よろしくね！</Text>
-          </Pressable>
         </View>
       ) : null}
     </View>
@@ -269,30 +237,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF66",
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-  },
-  revealCard: {
-    backgroundColor: "#FFFFFF12",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#FFFFFF22",
-    padding: 24,
-    alignItems: "center",
-    gap: 10,
-  },
-  revealEmoji: {
-    fontSize: 56,
-  },
-  revealName: {
-    color: "#FFD700",
-    fontSize: 20,
-    fontFamily: "PlusJakartaSans_800ExtraBold",
-    textAlign: "center",
-  },
-  revealMessage: {
-    color: "#FFFFFFCC",
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-    lineHeight: 22,
   },
 });

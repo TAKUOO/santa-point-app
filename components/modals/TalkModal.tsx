@@ -61,19 +61,19 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
           <View style={styles.header}>
+            <Pressable style={styles.backButton} onPress={onClose}>
+              <MaterialIcons name="close" size={20} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.title}>サンタとはなす</Text>
             <Pressable
               style={styles.threadButton}
               onPress={() => setShowThread((current) => !current)}
             >
               <MaterialIcons
-                name={showThread ? "arrow-back" : "history"}
+                name={showThread ? "arrow-forward" : "history"}
                 size={18}
                 color="#FFFFFFCC"
               />
-            </Pressable>
-            <Text style={styles.title}>サンタとはなす</Text>
-            <Pressable style={styles.backButton} onPress={onClose}>
-              <MaterialIcons name="close" size={20} color="#FFFFFF" />
             </Pressable>
           </View>
 

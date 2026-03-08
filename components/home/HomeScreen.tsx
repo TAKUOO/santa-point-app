@@ -6,7 +6,7 @@ import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
 import { WishListCard } from "./WishListCard";
 
-const ROOM_SCENE_IMAGE = require("../../images/generated-1772508399948.png");
+const ROOM_SCENE_IMAGE = require("../../assets/rooms/room-default.png");
 
 type Props = {
   activeChild: Child;

@@ -49,7 +49,7 @@
 |--------|------|------|--------|
 | leftCol | "22" PlusJakartaSans ExtraBold 32px `#FFFFFF` | "日" Inter Bold 14px `#FFFFFF88` | "🎄まで" Inter SemiBold 11px `#FFFFFF55` |
 | midCol | "180" PlusJakartaSans ExtraBold 32px `#FFFFFF` | "pt" Inter Bold 14px `#FFFFFF88` | "ポイント" Inter SemiBold 11px `#FFFFFF55` |
-| rightCol | "3" PlusJakartaSans ExtraBold 32px `#FFFFFF` | "/100" Inter SemiBold 13px `#FFFFFF55` | "🎅メダル" Inter SemiBold 11px `#FFFFFF55` |
+| rightCol | "3" PlusJakartaSans ExtraBold 32px `#FFFFFF` | "/10" Inter SemiBold 13px `#FFFFFF55` | "🎅メダル" Inter SemiBold 11px `#FFFFFF55` |
 
 - カラム間仕切り：1×52px `#FFFFFF15`
 

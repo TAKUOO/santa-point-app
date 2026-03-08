@@ -1,19 +1,12 @@
 import { ChatMessage, Child, Letter, Santa } from "../types";
-import { SANTAS } from "../constants/santas";
+import { MEDAL_MAX_COUNT, MEDAL_SANTA_IDS, RED_SANTA } from "../constants/santas";
 
 export function createUniqueId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function assignSanta(name: string, birthdate: string): Santa {
-  const nameSum = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const dateSum = birthdate
-    .replace(/-/g, "")
-    .split("")
-    .reduce((sum, digit) => sum + Number(digit), 0);
-  const index = (nameSum + dateSum) % SANTAS.length;
-
-  return SANTAS[index];
+  return RED_SANTA;
 }
 
 export function getRandomPoints(): number {
@@ -164,18 +157,23 @@ export function getRoomStateLabel(date = new Date()): string {
 
 export function normalizeChildForCurrentYear(child: Child, now = new Date()): Child {
   const currentYear = now.getFullYear();
+  const normalizedMedals = child.medals
+    .filter((medalId) => MEDAL_SANTA_IDS.includes(medalId))
+    .slice(0, MEDAL_MAX_COUNT);
   const normalizedChatHistory =
     child.chatHistory.length > 0 ? child.chatHistory : createInitialChatHistory(child.assignedSanta);
 
   if (child.lastResetYear === currentYear) {
     return {
       ...child,
+      medals: normalizedMedals,
       chatHistory: normalizedChatHistory,
     };
   }
 
   return {
     ...child,
+    medals: normalizedMedals,
     pointsThisYear: 0,
     lastResetYear: currentYear,
     chatHistory: normalizedChatHistory,

@@ -47,11 +47,11 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
         <Pressable style={styles.backdropTapArea} onPress={onClose} />
         <View style={styles.card}>
           <View style={styles.header}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.title}>サンタからのおてがみ</Text>
             <Pressable style={styles.closeButton} onPress={onClose}>
               <MaterialIcons name="close" size={20} color="#FFFFFF" />
             </Pressable>
+            <Text style={styles.title}>サンタからのおてがみ</Text>
+            <View style={styles.headerSpacer} />
           </View>
 
           <ScrollView style={styles.scroll}>

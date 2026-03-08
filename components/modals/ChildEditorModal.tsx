@@ -52,11 +52,11 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
           <View style={styles.header}>
-            <View style={styles.spacer} />
-            <Text style={styles.title}>お子様情報の編集</Text>
             <Pressable style={styles.closeButton} onPress={onClose}>
               <MaterialIcons name="close" size={20} color="#FFFFFF" />
             </Pressable>
+            <Text style={styles.title}>お子様情報の編集</Text>
+            <View style={styles.spacer} />
           </View>
 
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

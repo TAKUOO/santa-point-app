@@ -25,9 +25,9 @@ npm install react-native-reanimated
 
 3〜7歳の子どもが自分だけの担当サンタに毎日話しかけてポイントを貯め、プレゼントやメダルを集める**通年利用の子ども向けアプリ**。
 
-- **担当サンタ**：100人の中からオンボーディング時にランダム決定。4年間同じサンタが担当
+- **担当サンタ**：赤いサンタ1人（固定）。4年間同じサンタが担当
 - **ポイント**：話しかけるたびに1〜3ptランダム付与（優劣なし）
-- **メダル**：累計ポイント到達で自動付与（4年でコンプリート）
+- **メダルランク**：累計ポイントで10段階グレード昇格。ホームでランク表示（図鑑なし）
 - **データ**：AsyncStorageでローカル保存。JSONエクスポート/インポートで端末引き継ぎ
 
 ---
@@ -41,7 +41,7 @@ npm install react-native-reanimated
 │   └── データを引き継ぐ → JSONファイルインポート
 ├── ホーム（メイン・常駐）
 │   ├── プロフィールタブ（子ども切り替え）
-│   ├── 数値バッジ（クリスマスまでXX日 / XXXpt / X/100メダル）
+│   ├── 数値バッジ（クリスマスまでXX日 / XXXpt / 🎅ランク）
 │   ├── お手紙バナー（未読時のみ）
 │   ├── サンタのお部屋ビジュアル（アイソメトリック・リアルタイム連動）
 │   ├── ウィッシュリスト
@@ -57,8 +57,9 @@ npm install react-native-reanimated
 **ホーム以外はすべてモーダルで表示：**
 - 🎤 サンタにほうこく（チャットUI・音声入力）
 - 📜 サンタからのおてがみ
-- 🏅 サンタメダル図鑑
 - 📊 ダッシュボード（ポイント・ウィッシュリスト進捗）
+
+※メダルは10段階ランク制。図鑑画面はなし。ホームのバッジで現在ランクを表示。
 
 ---
 
@@ -77,7 +78,6 @@ santa-point-app/
 │   ├── modals/
 │   │   ├── ChatModal.tsx  # サンタにほうこく
 │   │   ├── LetterModal.tsx
-│   │   ├── MedalModal.tsx
 │   │   └── DashboardModal.tsx
 │   └── ui/
 │       ├── ProfileTabs.tsx
@@ -94,8 +94,8 @@ santa-point-app/
 │   ├── storage.ts         # AsyncStorage CRUD
 │   └── dataTransfer.ts    # JSON エクスポート/インポート
 ├── constants/
-│   ├── santas.ts          # 100人のサンタリスト
-│   └── medals.ts          # メダル付与閾値
+│   ├── santas.ts          # 赤いサンタ＋メダル用10体
+│   └── medals.ts          # ランク閾値・メダル内サンタ定義
 └── types/
     └── index.ts           # 型定義
 ```
@@ -240,10 +240,9 @@ function assignSanta(name: string, birthdate: string): Santa {
 10. LetterModal.tsx
 
 ### Phase 3
-11. MedalModal.tsx（図鑑UI）
-12. メダル付与ロジック
-13. DashboardModal.tsx
-14. 設定画面（エクスポート・インポート）
+11. メダル付与ロジック（ランクはホームバッジで表示。図鑑なし）
+12. DashboardModal.tsx
+13. 設定画面（エクスポート・インポート）
 
 ### Phase 4
 15. 音声入力（expo-speech）
