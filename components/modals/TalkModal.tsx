@@ -96,7 +96,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
                       <Text style={styles.speechText}>{message.text}</Text>
                       {message.points != null ? (
                         <View style={styles.pointGain}>
-                          <MaterialIcons name="star" size={16} color="#34D399" />
+                          <Text style={styles.pointGainEmoji}>🪙</Text>
                           <Text style={styles.pointGainText}>{message.points}ポイント</Text>
                         </View>
                       ) : null}
@@ -298,6 +298,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     alignSelf: "flex-start",
+  },
+  pointGainEmoji: {
+    fontSize: 16,
   },
   pointGainText: {
     color: "#34D399",

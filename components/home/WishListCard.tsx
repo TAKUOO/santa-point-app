@@ -14,21 +14,25 @@ export function WishListCard({ items, onRemoveItem }: Props) {
       </View>
 
       <View style={styles.card}>
-        {items.map((item, index) => (
-          <View
-            key={`${item}_${index}`}
-            style={[styles.row, index < items.length - 1 ? styles.rowBorder : null]}
-          >
-            <Text style={styles.item}>{item}</Text>
-            <Pressable
-              style={styles.removeButton}
-              onPress={() => onRemoveItem(item)}
-              hitSlop={8}
+        {items.length === 0 ? (
+          <Text style={styles.emptyMessage}>サンタさんに欲しいものをお願いしよう！</Text>
+        ) : (
+          items.map((item, index) => (
+            <View
+              key={`${item}_${index}`}
+              style={[styles.row, index < items.length - 1 ? styles.rowBorder : null]}
             >
-              <Text style={styles.removeButtonText}>×</Text>
-            </Pressable>
-          </View>
-        ))}
+              <Text style={styles.item}>{item}</Text>
+              <Pressable
+                style={styles.removeButton}
+                onPress={() => onRemoveItem(item)}
+                hitSlop={8}
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
       </View>
     </View>
   );
@@ -62,6 +66,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFFFFF18",
     padding: 12,
+  },
+  emptyMessage: {
+    color: "#FFFFFF88",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    textAlign: "center",
+    paddingVertical: 12,
   },
   row: {
     flexDirection: "row",
