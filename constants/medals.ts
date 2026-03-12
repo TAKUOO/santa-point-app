@@ -19,7 +19,7 @@ export type MedalRank = {
 };
 
 const MEDAL_SANTAS: MedalSanta[] = [
-  { id: 1, name: "アルミサンタ", descriptionForImage: "silver gray metallic clay santa, minimalist" },
+  { id: 1, name: "ノーマルサンタ", descriptionForImage: "normal classic red clay santa" },
   { id: 2, name: "ブロンズサンタ", descriptionForImage: "bronze copper colored clay santa" },
   { id: 3, name: "シルバーサンタ", descriptionForImage: "silver shiny metallic clay santa" },
   { id: 4, name: "ゴールドサンタ", descriptionForImage: "golden shiny metallic clay santa" },
@@ -32,7 +32,7 @@ const MEDAL_SANTAS: MedalSanta[] = [
 ];
 
 export const MEDAL_RANKS: MedalRank[] = [
-  { id: 1, name: "アルミ", icon: "⚪", santa: MEDAL_SANTAS[0] },
+  { id: 1, name: "ノーマル", icon: "⚪", santa: MEDAL_SANTAS[0] },
   { id: 2, name: "ブロンズ", icon: "🥉", santa: MEDAL_SANTAS[1] },
   { id: 3, name: "シルバー", icon: "🥈", santa: MEDAL_SANTAS[2] },
   { id: 4, name: "ゴールド", icon: "🥇", santa: MEDAL_SANTAS[3] },

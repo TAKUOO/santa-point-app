@@ -10,16 +10,17 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { OnboardingFlow } from "./components/OnboardingFlow";
 import { HomeScreen } from "./components/home/HomeScreen";
 import { LetterModal } from "./components/modals/LetterModal";
+import { RankUpCelebrationModal } from "./components/modals/RankUpCelebrationModal";
 import { SettingsModal } from "./components/modals/SettingsModal";
 import { TalkModal } from "./components/modals/TalkModal";
 import { ChildEditorModal } from "./components/modals/ChildEditorModal";
 import { MEDAL_SANTA_IDS } from "./constants/santas";
-import { calculateMedalCount } from "./constants/medals";
+import { calculateMedalCount, getCurrentMedalRank } from "./constants/medals";
 import {
   assignSanta,
   buildSantaReply,
@@ -42,6 +43,11 @@ import { ChatMessage, Child } from "./types";
 
 type ActiveModal = "talk" | "letters" | null;
 type ActiveScreen = "home" | "settings";
+type PendingRankUp = {
+  childId: string;
+  medalCount: number;
+  rankName: string;
+};
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -59,6 +65,7 @@ export default function App() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [pendingEditChildId, setPendingEditChildId] = useState<string | null>(null);
+  const [pendingRankUp, setPendingRankUp] = useState<PendingRankUp | null>(null);
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -130,6 +137,12 @@ export default function App() {
     }
   }, [activeModal, pendingEditChildId]);
 
+  useEffect(() => {
+    if (pendingRankUp && pendingRankUp.childId !== activeChildId) {
+      setPendingRankUp(null);
+    }
+  }, [activeChildId, pendingRankUp]);
+
   const activeChild = useMemo(
     () => children.find((child) => child.id === activeChildId) ?? null,
     [activeChildId, children],
@@ -138,6 +151,19 @@ export default function App() {
     () => children.find((child) => child.id === editingChildId) ?? null,
     [children, editingChildId],
   );
+  const handleDismissRankUpCelebration = useCallback(() => {
+    setPendingRankUp(null);
+  }, []);
+
+  const handleDebugShowRankUp = useCallback(() => {
+    if (!activeChild) return;
+    const nextMedalCount = Math.min(activeChild.medals.length + 1, 10);
+    setPendingRankUp({
+      childId: activeChild.id,
+      medalCount: nextMedalCount,
+      rankName: getCurrentMedalRank(nextMedalCount).name,
+    });
+  }, [activeChild]);
 
   const unreadCount = activeChild?.letters.filter((letter) => !letter.isRead).length ?? 0;
 
@@ -191,7 +217,12 @@ export default function App() {
       return;
     }
 
+    const normalizedActiveChild = normalizeChildForCurrentYear(activeChild);
     const points = getRandomPoints();
+    const wishlistCandidate = extractWishlistItem(text);
+    const nextAllTime = normalizedActiveChild.pointsAllTime + points;
+    const nextMedalCount = calculateMedalCount(nextAllTime);
+    const nextMedals = MEDAL_SANTA_IDS.slice(0, nextMedalCount);
     const childMessage: ChatMessage = {
       id: createUniqueId("chat"),
       role: "child",
@@ -206,29 +237,32 @@ export default function App() {
       timestamp: new Date().toISOString(),
     };
 
+    if (nextMedalCount > normalizedActiveChild.medals.length) {
+      setPendingRankUp({
+        childId: normalizedActiveChild.id,
+        medalCount: nextMedalCount,
+        rankName: getCurrentMedalRank(nextMedalCount).name,
+      });
+    }
+
     setChildren((prev) =>
       prev.map((child) => {
         if (child.id !== activeChild.id) {
           return child;
         }
 
-        const normalizedChild = normalizeChildForCurrentYear(child);
-        const nextAllTime = normalizedChild.pointsAllTime + points;
-        const nextMedalCount = calculateMedalCount(nextAllTime);
-        const wishlistCandidate = extractWishlistItem(text);
-        const nextMedals = MEDAL_SANTA_IDS.slice(0, nextMedalCount);
         const nextWishlist =
-          wishlistCandidate && !normalizedChild.wishlist.includes(wishlistCandidate)
-            ? [...normalizedChild.wishlist, wishlistCandidate]
-            : normalizedChild.wishlist;
+          wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate)
+            ? [...normalizedActiveChild.wishlist, wishlistCandidate]
+            : normalizedActiveChild.wishlist;
 
         return {
-          ...normalizedChild,
-          pointsThisYear: normalizedChild.pointsThisYear + points,
+          ...normalizedActiveChild,
+          pointsThisYear: normalizedActiveChild.pointsThisYear + points,
           pointsAllTime: nextAllTime,
           medals: nextMedals,
           wishlist: nextWishlist,
-          chatHistory: [...normalizedChild.chatHistory, childMessage, santaMessage],
+          chatHistory: [...normalizedActiveChild.chatHistory, childMessage, santaMessage],
         };
       }),
     );
@@ -319,6 +353,7 @@ export default function App() {
                 setShowAddChildModal(false);
                 setEditingChildId(null);
                 setPendingEditChildId(null);
+                setPendingRankUp(null);
                 setStorageError(null);
               } catch (error) {
                 setStorageError("アカウントの削除に失敗しました");
@@ -394,6 +429,7 @@ export default function App() {
               activeChild={activeChild}
               children={children}
               unreadCount={unreadCount}
+              onDebugShowRankUp={__DEV__ ? handleDebugShowRankUp : undefined}
               onRemoveWishlistItem={handleRemoveWishlistItem}
               onOpenLetters={() => setActiveModal("letters")}
               onOpenSettings={() => setActiveScreen("settings")}
@@ -417,6 +453,16 @@ export default function App() {
             visible={activeModal === "talk"}
             onClose={() => setActiveModal(null)}
             onSend={handleSendReport}
+          />
+          <RankUpCelebrationModal
+            medalCount={pendingRankUp?.medalCount ?? 0}
+            rankName={pendingRankUp?.rankName ?? ""}
+            visible={
+              activeScreen === "home" &&
+              activeModal === null &&
+              pendingRankUp?.childId === activeChild.id
+            }
+            onClose={handleDismissRankUpCelebration}
           />
           <LetterModal
             child={activeChild}

@@ -38,7 +38,6 @@ export function StatsBadges({
 
       <View style={styles.statusColumn}>
         <View style={styles.rankRow}>
-          <Text style={styles.rankIcon}>{currentRank.icon}</Text>
           <Text style={styles.rankName}>{currentRank.name}</Text>
         </View>
         <Text style={styles.label}>🎅ランク</Text>
@@ -79,18 +78,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   rankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 2,
-  },
-  rankIcon: {
-    fontSize: 24,
+    minHeight: 44,
+    justifyContent: "flex-end",
+    paddingBottom: 10,
   },
   rankName: {
     color: "#FFFFFF",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontSize: 18,
+    fontFamily: "PlusJakartaSans_700Bold",
+    marginBottom: 1,
   },
   label: {
     color: "#FFFFFF55",

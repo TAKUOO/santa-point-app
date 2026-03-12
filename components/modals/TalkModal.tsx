@@ -1,6 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { Child } from "../../types";
+import { getSantaAvatarSourceForMedalCount } from "../../constants/santaAvatars";
 
 type Props = {
   child: Child;
@@ -23,6 +25,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
   const [showComposer, setShowComposer] = useState(false);
   const [showThread, setShowThread] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const santaAvatarSource = getSantaAvatarSourceForMedalCount(child.medals.length);
 
   useEffect(() => {
     if (!visible) {
@@ -52,8 +55,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
 
     onSend(trimmed);
     setDraft("");
-    setShowComposer(false);
-    setShowThread(true);
+    onClose();
   }
 
   return (
@@ -87,6 +89,9 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
               {child.chatHistory.map((message) =>
                 message.role === "santa" ? (
                   <View key={message.id} style={styles.santaMessageWrap}>
+                    <View style={styles.santaAvatarSmall}>
+                      <Image source={santaAvatarSource} style={styles.santaAvatarSmallImage} />
+                    </View>
                     <View style={styles.speechBubble}>
                       <Text style={styles.speechText}>{message.text}</Text>
                       {message.points != null ? (
@@ -108,7 +113,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
             <View style={styles.startState}>
               <View style={styles.avatarWrap}>
                 <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarEmoji}>{child.assignedSanta.emoji}</Text>
+                  <Image source={santaAvatarSource} style={styles.avatarImage} />
                 </View>
               </View>
               <Text style={styles.startStateTitle}>サンタさんとお話しよう</Text>
@@ -206,14 +211,14 @@ const styles = StyleSheet.create({
     width: 132,
     height: 132,
     borderRadius: 66,
-    backgroundColor: "#FFFFFF15",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF22",
+    overflow: "hidden",
   },
-  avatarEmoji: {
-    fontSize: 64,
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   startState: {
     flex: 1,
@@ -256,6 +261,20 @@ const styles = StyleSheet.create({
   },
   santaMessageWrap: {
     alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 10,
+  },
+  santaAvatarSmall: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+    marginTop: 6,
+  },
+  santaAvatarSmallImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   speechBubble: {
     backgroundColor: "#FFFFFF15",

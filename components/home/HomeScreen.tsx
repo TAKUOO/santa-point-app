@@ -1,7 +1,7 @@
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
-import { daysUntilChristmas, getRoomStateLabel } from "../../services/santa";
+import { daysUntilChristmas } from "../../services/santa";
 import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
 import { WishListCard } from "./WishListCard";
@@ -12,6 +12,7 @@ type Props = {
   activeChild: Child;
   children: Child[];
   unreadCount: number;
+  onDebugShowRankUp?: () => void;
   onRemoveWishlistItem: (item: string) => void;
   onOpenLetters: () => void;
   onOpenSettings: () => void;
@@ -23,6 +24,7 @@ export function HomeScreen({
   activeChild,
   children,
   unreadCount,
+  onDebugShowRankUp,
   onRemoveWishlistItem,
   onOpenLetters,
   onOpenSettings,
@@ -30,7 +32,6 @@ export function HomeScreen({
   onSelectChild,
 }: Props) {
   const dayCount = daysUntilChristmas();
-  const roomLabel = getRoomStateLabel(new Date());
 
   return (
     <>
@@ -53,6 +54,11 @@ export function HomeScreen({
           medalCount={activeChild.medals.length}
           pointsThisYear={activeChild.pointsThisYear}
         />
+        {onDebugShowRankUp ? (
+          <Pressable style={styles.debugButton} onPress={onDebugShowRankUp}>
+            <Text style={styles.debugButtonText}>ランクアップ表示</Text>
+          </Pressable>
+        ) : null}
 
         {unreadCount > 0 ? (
           <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
@@ -75,10 +81,6 @@ export function HomeScreen({
         <Pressable style={styles.hitSanta} onPress={onOpenTalk} />
 
         <View style={styles.bottomGradient} />
-
-        <View style={styles.roomStateRow}>
-          <Text style={styles.roomStateText}>サンタさんは{roomLabel}</Text>
-        </View>
 
         <WishListCard items={activeChild.wishlist} onRemoveItem={onRemoveWishlistItem} />
 
@@ -132,6 +134,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
+  debugButton: {
+    position: "absolute",
+    top: 52,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#FFFFFF22",
+    borderRadius: 8,
+  },
+  debugButtonText: {
+    color: "#FFFFFFCC",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
   hitMail: {
     position: "absolute",
     top: 412,
@@ -169,18 +185,6 @@ const styles = StyleSheet.create({
     left: 240,
     width: 65,
     height: 75,
-  },
-  roomStateRow: {
-    position: "absolute",
-    bottom: 250,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  roomStateText: {
-    color: "#FFFFFF88",
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
   },
   talkButton: {
     position: "absolute",

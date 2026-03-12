@@ -7,7 +7,7 @@ const LOCK_FILE_PATH = "assets/medals/.generate-medals.lock";
 const DEFAULT_LIMIT = 10;
 const DEFAULT_DELAY_MS = 1200;
 const GRADE_DEFINITIONS = [
-  { id: 1, no: "001", name: "アルミ", message: "はじめてのメダル！ここからスタート" },
+  { id: 1, no: "001", name: "ノーマル", message: "はじめてのメダル！ここからスタート" },
   { id: 2, no: "002", name: "ブロンズ", message: "まいにちのがんばりがみえてきたね" },
   { id: 3, no: "003", name: "シルバー", message: "しっかりつづけていてすてき！" },
   { id: 4, no: "004", name: "ゴールド", message: "キラキラごほうびメダル！" },

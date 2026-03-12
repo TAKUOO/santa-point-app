@@ -134,23 +134,14 @@ export function getRoomStateLabel(date = new Date()): string {
   if (hour < 6) {
     return "ぐっすりねているよ";
   }
-  if (hour < 9) {
-    return "めをこすっているよ";
-  }
   if (hour < 12) {
-    return "あさごはんをたべているよ";
-  }
-  if (hour < 14) {
-    return "おひるねちゅうかも";
+    return "あさのじかんをすごしているよ";
   }
   if (hour < 18) {
     return "プレゼントをつくっているよ";
   }
-  if (hour < 20) {
-    return "おちゃをのんでいるよ";
-  }
   if (hour < 23) {
-    return "パジャマにきがえているよ";
+    return "よるのじかんをすごしているよ";
   }
   return "ねるじゅんびをしているよ";
 }
