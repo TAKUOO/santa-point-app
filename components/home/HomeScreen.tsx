@@ -1,4 +1,4 @@
-import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
 import { daysUntilChristmas } from "../../services/santa";
@@ -6,7 +6,7 @@ import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
 import { WishListCard } from "./WishListCard";
 
-const ROOM_SCENE_IMAGE = require("../../assets/rooms/room-default.png");
+const ROOM_SCENE_IMAGE = require("../../assets/rooms/room-cutout.png");
 
 type Props = {
   activeChild: Child;
@@ -24,7 +24,6 @@ export function HomeScreen({
   activeChild,
   children,
   unreadCount,
-  onDebugShowRankUp,
   onRemoveWishlistItem,
   onOpenLetters,
   onOpenSettings,
@@ -42,23 +41,12 @@ export function HomeScreen({
         onSelectChild={onSelectChild}
       />
 
-      <ImageBackground
-        source={ROOM_SCENE_IMAGE}
-        resizeMode="cover"
-        style={styles.roomScene}
-      >
-        <View style={styles.topGradient} />
-
+      <View style={styles.roomScene}>
         <StatsBadges
           daysUntilChristmas={dayCount}
           medalCount={activeChild.medals.length}
           pointsThisYear={activeChild.pointsThisYear}
         />
-        {onDebugShowRankUp ? (
-          <Pressable style={styles.debugButton} onPress={onDebugShowRankUp}>
-            <Text style={styles.debugButtonText}>ランクアップ表示</Text>
-          </Pressable>
-        ) : null}
 
         {unreadCount > 0 ? (
           <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
@@ -67,20 +55,11 @@ export function HomeScreen({
           </Pressable>
         ) : null}
 
-        <Pressable style={styles.hitMail} onPress={onOpenLetters}>
-          <View style={styles.mailIcon}>
-            <MaterialIcons name="mail" size={14} color="#FFD700" />
-          </View>
-          {unreadCount > 0 ? (
-            <View style={styles.mailBadge}>
-              <Text style={styles.mailBadgeText}>{unreadCount}</Text>
-            </View>
-          ) : null}
-        </Pressable>
-
+        <Image
+          source={ROOM_SCENE_IMAGE}
+          style={styles.roomImage}
+        />
         <Pressable style={styles.hitSanta} onPress={onOpenTalk} />
-
-        <View style={styles.bottomGradient} />
 
         <WishListCard items={activeChild.wishlist} onRemoveItem={onRemoveWishlistItem} />
 
@@ -88,7 +67,7 @@ export function HomeScreen({
           <MaterialIcons name="mic" size={24} color="#FFFFFF" />
           <Text style={styles.talkButtonText}>サンタさんとはなす</Text>
         </Pressable>
-      </ImageBackground>
+      </View>
     </>
   );
 }
@@ -97,22 +76,7 @@ const styles = StyleSheet.create({
   roomScene: {
     flex: 1,
     overflow: "hidden",
-  },
-  topGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 218,
-    backgroundColor: "#1A0F2ECC",
-  },
-  bottomGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 420,
-    backgroundColor: "#1A0F2ECC",
+    backgroundColor: "#1A0F2E",
   },
   letterBubble: {
     position: "absolute",
@@ -134,57 +98,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
-  debugButton: {
-    position: "absolute",
-    top: 52,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#FFFFFF22",
-    borderRadius: 8,
-  },
-  debugButtonText: {
-    color: "#FFFFFFCC",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  hitMail: {
-    position: "absolute",
-    top: 412,
-    left: 68,
-    width: 32,
-    height: 28,
-  },
-  mailIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: "#8B5E3CDD",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  mailBadge: {
-    position: "absolute",
-    top: -2,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#D43D2F",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  mailBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-  },
   hitSanta: {
     position: "absolute",
-    top: 270,
-    left: 240,
-    width: 65,
-    height: 75,
+    top: 343,
+    left: 230,
+    width: 90,
+    height: 90,
+    zIndex: 4,
+  },
+  roomImage: {
+    position: "absolute",
+    top: 238,
+    left: 50,
+    width: 320,
+    height: 290,
+    zIndex: 3,
   },
   talkButton: {
     position: "absolute",

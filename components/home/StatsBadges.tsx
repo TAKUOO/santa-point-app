@@ -49,7 +49,7 @@ export function StatsBadges({
 const styles = StyleSheet.create({
   statusBlock: {
     position: "absolute",
-    top: 48,
+    top: 32,
     left: 0,
     right: 0,
     flexDirection: "row",

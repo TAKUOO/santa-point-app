@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 48,
+    paddingTop: 8,
     paddingHorizontal: 20,
     paddingBottom: 4,
     gap: 6,

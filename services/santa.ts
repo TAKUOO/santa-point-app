@@ -128,22 +128,38 @@ export function daysUntilChristmas(baseDate = new Date()): number {
   );
 }
 
-export function getRoomStateLabel(date = new Date()): string {
+export type RoomTimeSlot = "lateNight" | "morning" | "daytime" | "night";
+
+export function getRoomTimeSlot(date = new Date()): RoomTimeSlot {
   const hour = date.getHours();
 
-  if (hour < 6) {
-    return "ぐっすりねているよ";
+  if (hour < 6 || hour >= 23) {
+    return "lateNight";
   }
   if (hour < 12) {
-    return "あさのじかんをすごしているよ";
+    return "morning";
   }
   if (hour < 18) {
-    return "プレゼントをつくっているよ";
+    return "daytime";
   }
-  if (hour < 23) {
-    return "よるのじかんをすごしているよ";
+  return "night";
+}
+
+export function getRoomStateLabel(date = new Date()): string {
+  const slot = getRoomTimeSlot(date);
+
+  switch (slot) {
+    case "lateNight":
+      return "ぐっすりねているよ";
+    case "morning":
+      return "あさのじかんをすごしているよ";
+    case "daytime":
+      return "プレゼントをつくっているよ";
+    case "night":
+      return "よるのじかんをすごしているよ";
+    default:
+      return "よるのじかんをすごしているよ";
   }
-  return "ねるじゅんびをしているよ";
 }
 
 export function normalizeChildForCurrentYear(child: Child, now = new Date()): Child {
