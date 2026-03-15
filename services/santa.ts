@@ -13,7 +13,22 @@ export function getRandomPoints(): number {
   return Math.floor(Math.random() * 3) + 1;
 }
 
-export function buildSantaReply(child: Child, reportText: string, points: number): string {
+export function buildSantaReply(
+  child: Child,
+  reportText: string,
+  points: number,
+  wishlistAdded: boolean,
+): string {
+  const wishlistReplies = [
+    "わかったよ！欲しいものに追加して覚えておくね！",
+    "おっほっほ！欲しいものリストにのせておくね！",
+    "ちゃんとメモしたよ！楽しみにしていてね！",
+  ];
+
+  if (wishlistAdded) {
+    return wishlistReplies[points % wishlistReplies.length];
+  }
+
   const starters = [
     "おっほっほ！",
     "わあ、すてきだね！",
@@ -27,9 +42,9 @@ export function buildSantaReply(child: Child, reportText: string, points: number
     `きみの「できた！」はとてもすてきだよ！`,
   ];
   const closers = [
-    `${points}ポイントプレゼントだよ！⭐`,
-    `きょうは ${points}ポイントをどうぞ！⭐`,
-    `${points}ポイントをサンタからおくるね！⭐`,
+    `${points}ポイントプレゼントだよ！`,
+    `きょうは ${points}ポイントをどうぞ！`,
+    `${points}ポイントをサンタからおくるね！`,
   ];
 
   const mention =
@@ -47,6 +62,7 @@ export function extractWishlistItem(text: string): string | null {
   const patterns = [
     /(.+?)\s*(が|を)?\s*(ほしい|欲しい)/,
     /(.+?)\s*(を)?\s*(おねがい|お願い)(したい|します)?/,
+    /(.+?)\s*(を)?\s*(ください|ちょうだい)/,
   ];
 
   for (const pattern of patterns) {
@@ -111,7 +127,7 @@ export function createInitialChatHistory(santa: Santa): ChatMessage[] {
     {
       id: createUniqueId("chat"),
       role: "santa",
-      text: `おっほっほ！🎅\nわたしは${santa.name}だよ。\nきょうのことをなんでもおしえてね！`,
+      text: `おっほっほ！\nわたしは${santa.name}だよ。\nきょうのことをなんでもおしえてね！`,
       timestamp: new Date().toISOString(),
     },
   ];

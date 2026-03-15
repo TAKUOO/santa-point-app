@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
+import { EmojiIcon } from "../common/EmojiIcon";
 
 type Props = {
   children: Child[];
@@ -29,27 +30,32 @@ export function SettingsModal({
 }: Props) {
   const items = [
     {
-      title: "📤 データをエクスポート",
+      icon: "outboxTray" as const,
+      title: "データをエクスポート",
       subtitle: "全データをJSONで保存する",
       onPress: () => onShowStub("エクスポート"),
     },
     {
-      title: "📥 データをインポート",
+      icon: "inboxTray" as const,
+      title: "データをインポート",
       subtitle: "JSONファイルから読み込む",
       onPress: () => onShowStub("インポート"),
     },
     {
-      title: "🔗 関連サービス",
+      icon: "link" as const,
+      title: "関連サービス",
       subtitle: "Claude / TTS / 音声入力",
       onPress: () => onShowStub("関連サービス"),
     },
     {
-      title: "📄 法的情報",
+      icon: "document" as const,
+      title: "法的情報",
       subtitle: "プライバシーポリシー・利用規約",
       onPress: () => onShowStub("法的情報"),
     },
     {
-      title: "🗑️ アカウントの削除",
+      icon: "trash" as const,
+      title: "アカウントの削除",
       subtitle: "保存されているデータをすべて削除する",
       onPress: onDeleteAccount,
     },
@@ -69,7 +75,11 @@ export function SettingsModal({
           <View style={styles.childSectionHeader}>
             <Text style={styles.sectionTitle}>お子様の管理</Text>
             <Pressable style={styles.addChildButton} onPress={onAddChild}>
-              <MaterialIcons name="add" size={18} color="#FFFFFF" />
+              <EmojiIcon
+                name="plus"
+                size={18}
+                style={{ tintColor: "#FFFFFF" }}
+              />
               <Text style={styles.addChildButtonText}>追加</Text>
             </Pressable>
           </View>
@@ -119,7 +129,10 @@ export function SettingsModal({
             ]}
             onPress={item.onPress}
           >
-            <Text style={styles.itemTitle}>{item.title}</Text>
+            <View style={styles.itemTitleRow}>
+              <EmojiIcon name={item.icon} size={22} />
+              <Text style={styles.itemTitle}>{item.title}</Text>
+            </View>
             <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
           </Pressable>
         ))}
@@ -180,6 +193,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
+  },
+  itemTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   addChildButtonText: {
     color: "#FFFFFF",

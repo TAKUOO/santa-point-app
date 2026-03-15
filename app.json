@@ -5,8 +5,27 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "サンタポイントが音声入力のためにマイクを使用します。",
+          "speechRecognitionPermission": "サンタポイントが音声を文字に変換するために音声認識を使用します。",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
+    ],
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "ios": {
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "サンタポイントが音声を文字に変換するために音声認識を使用します。",
+        "NSMicrophoneUsageDescription": "サンタポイントが音声入力のためにマイクを使用します。"
+      },
+      "bundleIdentifier": "com.matsui-dev.santa-point-app"
+    }
   }
 }

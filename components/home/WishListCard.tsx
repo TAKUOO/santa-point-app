@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { EmojiIcon } from "../common/EmojiIcon";
 
 type Props = {
   items: string[];
@@ -9,7 +10,7 @@ export function WishListCard({ items, onRemoveItem }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerEmoji}>🎁</Text>
+        <EmojiIcon name="gift" size={16} />
         <Text style={styles.title}>ほしいもの</Text>
       </View>
 
@@ -51,9 +52,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 4,
-  },
-  headerEmoji: {
-    fontSize: 16,
   },
   title: {
     color: "#FFFFFFDD",

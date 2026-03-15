@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { EmojiIcon } from "./common/EmojiIcon";
 type OnboardingStep = "choice" | "input";
 
 type Props = {
@@ -67,7 +68,10 @@ export function OnboardingFlow({
 
       {step === "choice" && mode === "initial" ? (
         <View style={styles.content}>
-          <Text style={styles.title}>🎅 サンタポイントへようこそ</Text>
+          <View style={styles.titleRow}>
+            <EmojiIcon name="santa" size={26} />
+            <Text style={styles.title}>サンタポイントへようこそ</Text>
+          </View>
           <Text style={styles.subtitle}>
             まいにちサンタさんにほうこくして{"\n"}ポイントをためよう！
           </Text>
@@ -75,13 +79,19 @@ export function OnboardingFlow({
             style={styles.primaryButton}
             onPress={() => setStep("input")}
           >
-            <Text style={styles.primaryButtonText}>🎄 あたらしくはじめる</Text>
+            <View style={styles.buttonContentRow}>
+              <EmojiIcon name="christmasTree" size={15} />
+              <Text style={styles.primaryButtonText}>あたらしくはじめる</Text>
+            </View>
           </Pressable>
           <Pressable
             style={styles.secondaryButton}
             onPress={() => Alert.alert("データをひきつぐ", "このきのうはじゅんびちゅうです")}
           >
-            <Text style={styles.secondaryButtonText}>📦 データをひきついではじめる</Text>
+            <View style={styles.buttonContentRow}>
+              <EmojiIcon name="package" size={15} />
+              <Text style={styles.secondaryButtonText}>データをひきついではじめる</Text>
+            </View>
           </Pressable>
         </View>
       ) : null}
@@ -184,6 +194,12 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_800ExtraBold",
     textAlign: "center",
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   subtitle: {
     color: "#FFFFFFAA",
     fontSize: 14,
@@ -208,6 +224,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: "center",
+  },
+  buttonContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   primaryButtonText: {
     color: "#FFFFFF",

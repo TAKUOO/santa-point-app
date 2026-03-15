@@ -1,12 +1,19 @@
+import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
-import { daysUntilChristmas } from "../../services/santa";
+import { daysUntilChristmas, getRoomTimeSlot, RoomTimeSlot } from "../../services/santa";
+import { EmojiIcon } from "../common/EmojiIcon";
 import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
 import { WishListCard } from "./WishListCard";
 
-const ROOM_SCENE_IMAGE = require("../../assets/rooms/room-cutout.png");
+const NORMAL_ROOM_SCENES: Record<RoomTimeSlot, number> = {
+  lateNight: require("../../assets/generated/rooms/normal/normal-santa-late-night.png"),
+  morning: require("../../assets/generated/rooms/normal/normal-santa-morning.png"),
+  daytime: require("../../assets/generated/rooms/normal/normal-santa-daytime.png"),
+  night: require("../../assets/generated/rooms/normal/normal-santa-night.png"),
+};
 
 type Props = {
   activeChild: Child;
@@ -31,6 +38,15 @@ export function HomeScreen({
   onSelectChild,
 }: Props) {
   const dayCount = daysUntilChristmas();
+  const [roomTimeSlot, setRoomTimeSlot] = useState<RoomTimeSlot>(() => getRoomTimeSlot());
+
+  useEffect(() => {
+    const updateRoomTimeSlot = () => setRoomTimeSlot(getRoomTimeSlot());
+    const timer = setInterval(updateRoomTimeSlot, 60_000);
+    updateRoomTimeSlot();
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
@@ -49,17 +65,21 @@ export function HomeScreen({
         />
 
         {unreadCount > 0 ? (
-          <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
-            <Text style={styles.letterEmoji}>📩</Text>
-            <Text style={styles.letterBubbleText}>サンタからお手紙が届いたよ！</Text>
-          </Pressable>
+          <View style={styles.letterBubbleContainer}>
+            <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
+              <EmojiIcon name="incomingEnvelope" size={16} />
+              <Text style={styles.letterBubbleText}>サンタからお手紙が届いたよ！</Text>
+            </Pressable>
+          </View>
         ) : null}
 
-        <Image
-          source={ROOM_SCENE_IMAGE}
-          style={styles.roomImage}
-        />
-        <Pressable style={styles.hitSanta} onPress={onOpenTalk} />
+        <View style={styles.roomContainer}>
+          <Image
+            source={NORMAL_ROOM_SCENES[roomTimeSlot]}
+            style={styles.roomImage}
+          />
+          <Pressable style={styles.hitSanta} onPress={onOpenTalk} />
+        </View>
 
         <WishListCard items={activeChild.wishlist} onRemoveItem={onRemoveWishlistItem} />
 
@@ -78,10 +98,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#1A0F2E",
   },
-  letterBubble: {
+  letterBubbleContainer: {
     position: "absolute",
     top: 160,
-    left: 87,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  letterBubble: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -90,29 +114,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  letterEmoji: {
-    fontSize: 16,
-  },
   letterBubbleText: {
     color: "#2C1810",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
+  roomContainer: {
+    position: "absolute",
+    top: 238,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 3,
+  },
+  roomImage: {
+    width: 320,
+    height: 303,
+  },
   hitSanta: {
     position: "absolute",
-    top: 343,
-    left: 230,
+    top: 105,
+    left: 180,
     width: 90,
     height: 90,
     zIndex: 4,
-  },
-  roomImage: {
-    position: "absolute",
-    top: 238,
-    left: 50,
-    width: 320,
-    height: 290,
-    zIndex: 3,
   },
   talkButton: {
     position: "absolute",

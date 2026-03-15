@@ -16,13 +16,18 @@
     "@expo/vector-icons": "15.1.1",
     "@fal-ai/client": "^1.9.4",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "buffer": "^6.0.3",
     "expo": "55.0.5",
+    "expo-audio": "~55.0.8",
     "expo-font": "55.0.4",
+    "expo-speech": "~55.0.8",
+    "expo-speech-recognition": "^3.1.1",
     "expo-status-bar": "55.0.4",
     "react": "19.2.0",
     "react-native": "0.83.2"
   },
   "devDependencies": {
+    "dotenv": "^17.3.1",
     "typescript": "5.9.3"
   }
 }

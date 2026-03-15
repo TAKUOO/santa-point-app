@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { EmojiIcon } from "../common/EmojiIcon";
 import { Child } from "../../types";
 
 type Props = {
@@ -61,9 +62,9 @@ export function LetterModal({ child, visible, onClose, onMarkRead }: Props) {
                   style={styles.mainCard}
                   onPress={() => onMarkRead(latestLetter.id)}
                 >
-                  <Text style={styles.snowflakePrimary}>❄︎</Text>
-                  <Text style={styles.snowflakeSecondary}>❄︎</Text>
-                  <Text style={styles.snowflakeTertiary}>✦</Text>
+                  <EmojiIcon name="snowflake" size={34} style={styles.snowflakePrimary} />
+                  <EmojiIcon name="snowflake" size={24} style={styles.snowflakeSecondary} />
+                  <EmojiIcon name="sparkles" size={18} style={styles.snowflakeTertiary} />
                   <View style={styles.mainCardHeader}>
                     <View style={styles.mainCardHeaderSpacer} />
                     <Text style={styles.dateText}>
@@ -189,22 +190,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 18,
     right: 22,
-    fontSize: 42,
-    color: "#FFFFFF14",
+    opacity: 0.26,
   },
   snowflakeSecondary: {
     position: "absolute",
     bottom: 20,
     left: 18,
-    fontSize: 32,
-    color: "#FFFFFF12",
+    opacity: 0.22,
   },
   snowflakeTertiary: {
     position: "absolute",
     top: 62,
     left: 28,
-    fontSize: 18,
-    color: "#FFFFFF10",
+    opacity: 0.18,
   },
   mainCardHeader: {
     flexDirection: "row",

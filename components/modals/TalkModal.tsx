@@ -1,6 +1,12 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -10,22 +16,59 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { EmojiIcon } from "../common/EmojiIcon";
 import { Child } from "../../types";
 import { getSantaAvatarSourceForMedalCount } from "../../constants/santaAvatars";
+import { speakSantaReply, stopSantaSpeech } from "../../services/tts";
 
 type Props = {
   child: Child;
   visible: boolean;
   onClose: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => string | undefined;
 };
+
+function sanitizeMessageText(text: string): string {
+  return text.replace(/[🎅📩🎁📦⭐]/g, "");
+}
 
 export function TalkModal({ child, visible, onClose, onSend }: Props) {
   const [draft, setDraft] = useState("");
   const [showComposer, setShowComposer] = useState(false);
   const [showThread, setShowThread] = useState(false);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const santaAvatarSource = getSantaAvatarSourceForMedalCount(child.medals.length);
+
+  useSpeechRecognitionEvent("start", () => {
+    setIsRecognizing(true);
+    setRecognitionError(null);
+  });
+
+  useSpeechRecognitionEvent("end", () => {
+    setIsRecognizing(false);
+  });
+
+  useSpeechRecognitionEvent("result", (event) => {
+    const transcript = event.results[0]?.transcript?.trim();
+    if (!transcript) {
+      return;
+    }
+
+    setDraft(transcript);
+    setRecognitionError(null);
+  });
+
+  useSpeechRecognitionEvent("error", (event) => {
+    if (event.error === "aborted") {
+      setIsRecognizing(false);
+      return;
+    }
+
+    setIsRecognizing(false);
+    setRecognitionError("音声をうまく聞き取れませんでした。ことばを直してください。");
+  });
 
   useEffect(() => {
     if (!visible) {
@@ -44,7 +87,17 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       setShowComposer(false);
       setDraft("");
       setShowThread(false);
+      setIsRecognizing(false);
+      setRecognitionError(null);
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (visible) {
+      return;
+    }
+
+    ExpoSpeechRecognitionModule.abort();
   }, [visible]);
 
   function handleSend() {
@@ -53,38 +106,96 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       return;
     }
 
-    onSend(trimmed);
+    setShowComposer(false);
+    const santaReply = onSend(trimmed);
     setDraft("");
-    onClose();
+    if (santaReply) {
+      speakSantaReply(santaReply);
+    }
+    // チャット履歴には切り替えず、サンタとの音声画面のまま返答を読み上げる
+  }
+
+  function handleCloseComposer() {
+    if (isRecognizing) {
+      ExpoSpeechRecognitionModule.abort();
+    }
+    setShowComposer(false);
+  }
+
+  async function handlePressMic() {
+    setShowComposer(true);
+    setRecognitionError(null);
+
+    if (isRecognizing) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+
+    if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+      Alert.alert("音声入力を使えません", "この端末では音声入力を利用できません。");
+      return;
+    }
+
+    const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!permission.granted) {
+      setRecognitionError("マイクと音声認識の許可が必要です。");
+      return;
+    }
+
+    stopSantaSpeech();
+    setDraft("");
+
+    ExpoSpeechRecognitionModule.start({
+      lang: "ja-JP",
+      interimResults: true,
+      continuous: false,
+      maxAlternatives: 1,
+      addsPunctuation: true,
+      contextualStrings: child.wishlist,
+    });
   }
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
+      <View style={styles.backdrop}>
+        <Pressable style={styles.backdropOverlay} onPress={onClose} />
+        <View style={styles.card}>
           <View style={styles.header}>
-            <Pressable style={styles.backButton} onPress={onClose}>
-              <MaterialIcons name="close" size={20} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.title}>サンタとはなす</Text>
             <Pressable
-              style={styles.threadButton}
-              onPress={() => setShowThread((current) => !current)}
+              style={styles.backButton}
+              onPress={showThread ? () => setShowThread(false) : onClose}
             >
               <MaterialIcons
-                name={showThread ? "arrow-forward" : "history"}
-                size={18}
-                color="#FFFFFFCC"
+                name={showThread ? "arrow-back" : "close"}
+                size={20}
+                color="#FFFFFF"
               />
             </Pressable>
+            <Text style={styles.title}>サンタとはなす</Text>
+            {showThread ? (
+              <View style={styles.spacer} />
+            ) : (
+              <Pressable
+                style={styles.threadButton}
+                onPress={() => setShowThread((current) => !current)}
+              >
+                <MaterialIcons name="history" size={18} color="#FFFFFFCC" />
+              </Pressable>
+            )}
           </View>
 
           {showThread ? (
             <ScrollView
               ref={scrollViewRef}
               style={styles.chatScroll}
-              contentContainerStyle={styles.chatContent}
-              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.chatContent,
+                showThread ? styles.chatContentThread : null,
+              ]}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              alwaysBounceVertical
             >
               {child.chatHistory.map((message) =>
                 message.role === "santa" ? (
@@ -93,10 +204,10 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
                       <Image source={santaAvatarSource} style={styles.santaAvatarSmallImage} />
                     </View>
                     <View style={styles.speechBubble}>
-                      <Text style={styles.speechText}>{message.text}</Text>
+                      <Text style={styles.speechText}>{sanitizeMessageText(message.text)}</Text>
                       {message.points != null ? (
                         <View style={styles.pointGain}>
-                          <Text style={styles.pointGainEmoji}>🪙</Text>
+                          <EmojiIcon name="coin" size={16} />
                           <Text style={styles.pointGainText}>{message.points}ポイント</Text>
                         </View>
                       ) : null}
@@ -104,7 +215,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
                   </View>
                 ) : (
                   <View key={message.id} style={styles.userBubble}>
-                    <Text style={styles.userBubbleText}>{message.text}</Text>
+                    <Text style={styles.userBubbleText}>{sanitizeMessageText(message.text)}</Text>
                   </View>
                 ),
               )}
@@ -122,23 +233,47 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
               </Text>
             </View>
           )}
-        </Pressable>
-
-        <View pointerEvents="box-none" style={styles.fixedActionArea}>
-          <Pressable style={styles.micButtonWrap} onPress={() => setShowComposer(true)}>
-            <View style={styles.micButton}>
-              <MaterialIcons name="mic" size={22} color="#FFFFFF" />
-            </View>
-          </Pressable>
         </View>
 
+        {!showThread ? (
+          <View pointerEvents="box-none" style={styles.fixedActionArea}>
+            <Pressable style={styles.micButtonWrap} onPress={handlePressMic}>
+              <View style={[styles.micButton, isRecognizing ? styles.micButtonActive : null]}>
+                <MaterialIcons name={isRecognizing ? "stop" : "mic"} size={22} color="#FFFFFF" />
+              </View>
+              <Text style={styles.micButtonLabel}>
+                {isRecognizing
+                  ? "きいているよ... タップで停止"
+                  : "タップしてサンタさんに話しかけよう！"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {showComposer ? (
-          <Pressable style={styles.composerOverlay} onPress={() => setShowComposer(false)}>
+          <Pressable style={styles.composerOverlay} onPress={handleCloseComposer}>
             <Pressable style={styles.composerSheet} onPress={(event) => event.stopPropagation()}>
               <Text style={styles.composerTitle}>ことばを確認する</Text>
               <Text style={styles.composerDescription}>
-                音声がうまく認識できなかったときだけ直してください
+                {isRecognizing
+                  ? "おはなしが終わったら、もういちどボタンを押して止めてください"
+                  : "音声がうまく認識できなかったときだけ直してください"}
               </Text>
+              <View style={styles.recognitionStatus}>
+                {isRecognizing ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFD166" />
+                    <Text style={styles.recognitionStatusText}>ききとり中です...</Text>
+                  </>
+                ) : (
+                  <Text style={styles.recognitionStatusTextMuted}>
+                    ここに音声が文字で入ります
+                  </Text>
+                )}
+              </View>
+              {recognitionError ? (
+                <Text style={styles.recognitionErrorText}>{recognitionError}</Text>
+              ) : null}
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
@@ -149,7 +284,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
                 autoFocus
               />
               <View style={styles.composerActions}>
-                <Pressable style={styles.secondaryAction} onPress={() => setShowComposer(false)}>
+                <Pressable style={styles.secondaryAction} onPress={handleCloseComposer}>
                   <Text style={styles.secondaryActionText}>閉じる</Text>
                 </Pressable>
                 <Pressable style={styles.primaryAction} onPress={handleSend}>
@@ -159,7 +294,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
             </Pressable>
           </Pressable>
         ) : null}
-      </Pressable>
+      </View>
     </Modal>
   );
 }
@@ -167,8 +302,11 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "#00000088",
     justifyContent: "flex-end",
+  },
+  backdropOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#00000088",
   },
   card: {
     height: "93%",
@@ -259,6 +397,9 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 140,
   },
+  chatContentThread: {
+    paddingBottom: 24,
+  },
   santaMessageWrap: {
     alignItems: "flex-start",
     flexDirection: "row",
@@ -298,9 +439,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     alignSelf: "flex-start",
-  },
-  pointGainEmoji: {
-    fontSize: 16,
   },
   pointGainText: {
     color: "#34D399",
@@ -409,5 +547,44 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
+  },
+  micButtonActive: {
+    backgroundColor: "#FF7C5C",
+  },
+  micButtonLabel: {
+    color: "#FFFFFFCC",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    marginTop: 10,
+    textAlign: "center",
+  },
+  recognitionErrorText: {
+    color: "#FFB4C7",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  recognitionStatus: {
+    minHeight: 42,
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF0F",
+    borderWidth: 1,
+    borderColor: "#FFFFFF14",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  recognitionStatusText: {
+    color: "#FFD166",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  recognitionStatusTextMuted: {
+    color: "#FFFFFF73",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
   },
 });

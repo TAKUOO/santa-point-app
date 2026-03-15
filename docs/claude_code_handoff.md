@@ -262,13 +262,18 @@ function assignSanta(name: string, birthdate: string): Santa {
 
 ---
 
-## 環境変数（.env）
+## 環境変数（.env.local）
+
+- 開発時は `.env.local` に記載（コミットしないこと）
+- `app.config.js` が読み込み、Expo の `extra` に渡す
 
 ```
-EXPO_PUBLIC_CLAUDE_API_KEY=your_key_here
-EXPO_PUBLIC_ELEVENLABS_API_KEY=your_key_here
-EXPO_PUBLIC_ELEVENLABS_VOICE_ID=your_voice_id_here
+# サンタの声（ElevenLabs）※任意。未設定なら端末のTTSを使用
+ELEVENLABS_API_KEY=your_key_here
+ELEVENLABS_VOICE_ID=your_voice_id_here
 ```
+
+詳細は [docs/elevenlabs_tts.md](elevenlabs_tts.md) を参照。
 
 ---
 

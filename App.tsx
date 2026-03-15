@@ -11,7 +11,7 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { OnboardingFlow } from "./components/OnboardingFlow";
 import { HomeScreen } from "./components/home/HomeScreen";
 import { LetterModal } from "./components/modals/LetterModal";
@@ -39,6 +39,7 @@ import {
   saveActiveChildId,
   saveChildren,
 } from "./services/storage";
+import { stopSantaSpeech } from "./services/tts";
 import { ChatMessage, Child } from "./types";
 
 type ActiveModal = "talk" | "letters" | null;
@@ -143,6 +144,8 @@ export default function App() {
     }
   }, [activeChildId, pendingRankUp]);
 
+  useEffect(() => () => { void stopSantaSpeech(); }, []);
+
   const activeChild = useMemo(
     () => children.find((child) => child.id === activeChildId) ?? null,
     [activeChildId, children],
@@ -212,9 +215,9 @@ export default function App() {
     setEditingChildId(null);
   }
 
-  function handleSendReport(text: string) {
+  function handleSendReport(text: string): string | undefined {
     if (!activeChild) {
-      return;
+      return undefined;
     }
 
     const normalizedActiveChild = normalizeChildForCurrentYear(activeChild);
@@ -229,11 +232,13 @@ export default function App() {
       text,
       timestamp: new Date().toISOString(),
     };
+    const wishlistAdded =
+      !!wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate);
     const santaMessage: ChatMessage = {
       id: createUniqueId("chat"),
       role: "santa",
-      text: buildSantaReply(activeChild, text, points),
-      points,
+      text: buildSantaReply(activeChild, text, points, wishlistAdded),
+      points: wishlistAdded ? undefined : points,
       timestamp: new Date().toISOString(),
     };
 
@@ -251,10 +256,9 @@ export default function App() {
           return child;
         }
 
-        const nextWishlist =
-          wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate)
-            ? [...normalizedActiveChild.wishlist, wishlistCandidate]
-            : normalizedActiveChild.wishlist;
+        const nextWishlist = wishlistAdded
+          ? [...normalizedActiveChild.wishlist, wishlistCandidate!]
+          : normalizedActiveChild.wishlist;
 
         return {
           ...normalizedActiveChild,
@@ -266,6 +270,8 @@ export default function App() {
         };
       }),
     );
+
+    return santaMessage.text;
   }
 
   function handleMarkLetterRead(letterId: string) {
@@ -401,7 +407,7 @@ export default function App() {
       <SafeAreaView style={styles.screen}>
         <StatusBar style="light" />
         <View style={styles.centered}>
-          <Text style={styles.loadingEmoji}>🎅</Text>
+          <ActivityIndicator size="large" color="#FFFFFFAA" />
           <Text style={styles.loadingText}>よみこみちゅう...</Text>
         </View>
       </SafeAreaView>
@@ -508,9 +514,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-  },
-  loadingEmoji: {
-    fontSize: 56,
   },
   loadingText: {
     color: "#FFFFFFAA",

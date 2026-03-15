@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { EmojiIcon } from "../common/EmojiIcon";
 import { getCurrentMedalRank } from "../../constants/medals";
 
 type Props = {
@@ -21,7 +22,10 @@ export function StatsBadges({
           <Text style={styles.value}>{daysUntilChristmas}</Text>
           <Text style={styles.unit}>日</Text>
         </View>
-        <Text style={styles.label}>🎄まで</Text>
+        <View style={styles.labelRow}>
+          <EmojiIcon name="christmasTree" size={12} style={styles.labelIcon} />
+          <Text style={styles.labelText}>まで</Text>
+        </View>
       </View>
 
       <View style={styles.separator} />
@@ -31,7 +35,10 @@ export function StatsBadges({
           <Text style={styles.value}>{pointsThisYear}</Text>
           <Text style={styles.unit}>pt</Text>
         </View>
-        <Text style={styles.label}>🪙ポイント</Text>
+        <View style={styles.labelRow}>
+          <EmojiIcon name="coin" size={12} style={styles.labelIcon} />
+          <Text style={styles.labelText}>ポイント</Text>
+        </View>
       </View>
 
       <View style={styles.separator} />
@@ -40,7 +47,10 @@ export function StatsBadges({
         <View style={styles.rankRow}>
           <Text style={styles.rankName}>{currentRank.name}</Text>
         </View>
-        <Text style={styles.label}>🎅ランク</Text>
+        <View style={styles.labelRow}>
+          <EmojiIcon name="santa" size={12} style={styles.labelIcon} />
+          <Text style={styles.labelText}>ランク</Text>
+        </View>
       </View>
     </View>
   );
@@ -88,7 +98,15 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_700Bold",
     marginBottom: 1,
   },
-  label: {
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  labelIcon: {
+    opacity: 0.72,
+  },
+  labelText: {
     color: "#FFFFFF55",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
