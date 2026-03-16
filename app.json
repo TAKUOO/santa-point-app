@@ -2,6 +2,7 @@
   "expo": {
     "name": "Santa Point",
     "slug": "santa-point-app",
+    "icon": "./assets/icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -20,6 +21,12 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1A0F2E"
+      }
+    },
     "ios": {
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "サンタポイントが音声を文字に変換するために音声認識を使用します。",

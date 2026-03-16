@@ -126,7 +126,7 @@ export function extractWishlistItem(text: string): string | null {
 }
 
 export function createInitialWishlist(): string[] {
-  return ["ゲームソフト", "プリンセスのドレス", "サッカーボール"];
+  return [];
 }
 
 export function createInitialLetter(childName: string, santa: Santa): Letter {
