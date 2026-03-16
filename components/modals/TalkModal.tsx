@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Modal,
   Pressable,
@@ -37,9 +38,38 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
   const [showComposer, setShowComposer] = useState(false);
   const [showThread, setShowThread] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [isSantaSpeaking, setIsSantaSpeaking] = useState(false);
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const speakAnim = useRef(new Animated.Value(1)).current;
   const santaAvatarSource = getSantaAvatarSourceForMedalCount(child.medals.length);
+
+  useEffect(() => {
+    if (!isSantaSpeaking) {
+      Animated.timing(speakAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(speakAnim, {
+          toValue: 1.04,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(speakAnim, {
+          toValue: 0.98,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isSantaSpeaking, speakAnim]);
 
   useSpeechRecognitionEvent("start", () => {
     setIsRecognizing(true);
@@ -88,6 +118,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       setDraft("");
       setShowThread(false);
       setIsRecognizing(false);
+      setIsSantaSpeaking(false);
       setRecognitionError(null);
     }
   }, [visible]);
@@ -110,7 +141,10 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
     const santaReply = onSend(trimmed);
     setDraft("");
     if (santaReply) {
-      speakSantaReply(santaReply);
+      speakSantaReply(santaReply, {
+        onStart: () => setIsSantaSpeaking(true),
+        onEnd: () => setIsSantaSpeaking(false),
+      });
     }
     // チャット履歴には切り替えず、サンタとの音声画面のまま返答を読み上げる
   }
@@ -120,6 +154,12 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
       ExpoSpeechRecognitionModule.abort();
     }
     setShowComposer(false);
+  }
+
+  function handleClose() {
+    stopSantaSpeech();
+    setIsSantaSpeaking(false);
+    onClose();
   }
 
   async function handlePressMic() {
@@ -143,6 +183,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
     }
 
     stopSantaSpeech();
+    setIsSantaSpeaking(false);
     setDraft("");
 
     ExpoSpeechRecognitionModule.start({
@@ -156,14 +197,14 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
   }
 
   return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
+    <Modal animationType="slide" transparent visible={visible} onRequestClose={handleClose}>
       <View style={styles.backdrop}>
-        <Pressable style={styles.backdropOverlay} onPress={onClose} />
+        <Pressable style={styles.backdropOverlay} onPress={handleClose} />
         <View style={styles.card}>
           <View style={styles.header}>
             <Pressable
               style={styles.backButton}
-              onPress={showThread ? () => setShowThread(false) : onClose}
+              onPress={showThread ? () => setShowThread(false) : handleClose}
             >
               <MaterialIcons
                 name={showThread ? "arrow-back" : "close"}
@@ -223,8 +264,17 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
           ) : (
             <View style={styles.startState}>
               <View style={styles.avatarWrap}>
-                <View style={styles.avatarCircle}>
-                  <Image source={santaAvatarSource} style={styles.avatarImage} />
+                <View
+                  style={[
+                    styles.avatarCircleOuter,
+                    isSantaSpeaking && styles.avatarCircleSpeaking,
+                  ]}
+                >
+                  <Animated.View
+                    style={[styles.avatarCircle, { transform: [{ scale: speakAnim }] }]}
+                  >
+                    <Image source={santaAvatarSource} style={styles.avatarImage} />
+                  </Animated.View>
                 </View>
               </View>
               <Text style={styles.startStateTitle}>サンタさんとお話しよう</Text>
@@ -344,6 +394,20 @@ const styles = StyleSheet.create({
   avatarWrap: {
     alignItems: "center",
     marginBottom: 8,
+  },
+  avatarCircleOuter: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarCircleSpeaking: {
+    shadowColor: "#FFD166",
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
   },
   avatarCircle: {
     width: 132,

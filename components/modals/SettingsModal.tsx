@@ -7,7 +7,6 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
-import { EmojiIcon } from "../common/EmojiIcon";
 
 type Props = {
   children: Child[];
@@ -19,6 +18,11 @@ type Props = {
   onShowStub: (title: string) => void;
 };
 
+// リリース時は不要のためコメントアウト
+// - データインポート/エクスポート
+// - 関連サービス
+// - データを引き継いで始めるボタン（OnboardingFlow側）
+
 export function SettingsModal({
   children,
   onClose,
@@ -28,37 +32,9 @@ export function SettingsModal({
   onDeleteAccount,
   onShowStub,
 }: Props) {
-  const items = [
-    {
-      icon: "outboxTray" as const,
-      title: "データをエクスポート",
-      subtitle: "全データをJSONで保存する",
-      onPress: () => onShowStub("エクスポート"),
-    },
-    {
-      icon: "inboxTray" as const,
-      title: "データをインポート",
-      subtitle: "JSONファイルから読み込む",
-      onPress: () => onShowStub("インポート"),
-    },
-    {
-      icon: "link" as const,
-      title: "関連サービス",
-      subtitle: "Claude / TTS / 音声入力",
-      onPress: () => onShowStub("関連サービス"),
-    },
-    {
-      icon: "document" as const,
-      title: "法的情報",
-      subtitle: "プライバシーポリシー・利用規約",
-      onPress: () => onShowStub("法的情報"),
-    },
-    {
-      icon: "trash" as const,
-      title: "アカウントの削除",
-      subtitle: "保存されているデータをすべて削除する",
-      onPress: onDeleteAccount,
-    },
+  const legalItems = [
+    { title: "利用規約", onPress: () => onShowStub("利用規約") },
+    { title: "プライバシーポリシー", onPress: () => onShowStub("プライバシーポリシー") },
   ];
 
   return (
@@ -70,49 +46,47 @@ export function SettingsModal({
         <Text style={styles.title}>設定</Text>
         <View style={styles.spacer} />
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.childSection}>
-          <View style={styles.childSectionHeader}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* お子様の管理 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>お子様の管理</Text>
             <Pressable style={styles.addChildButton} onPress={onAddChild}>
-              <EmojiIcon
-                name="plus"
-                size={18}
-                style={{ tintColor: "#FFFFFF" }}
-              />
+              <MaterialIcons name="add" size={20} color={colors.link} />
               <Text style={styles.addChildButtonText}>追加</Text>
             </Pressable>
           </View>
-
-          <View style={styles.childList}>
+          <View style={styles.group}>
             {children.map((child, index) => (
               <View
                 key={child.id}
                 style={[
-                  styles.childCard,
-                  index < children.length - 1 ? styles.childCardBorder : null,
+                  styles.row,
+                  index < children.length - 1 ? styles.rowBorder : null,
                 ]}
               >
                 <View style={styles.childInfo}>
-                  <View style={styles.childNameRow}>
-                    <Text style={styles.childName}>{child.name}</Text>
-                  </View>
+                  <Text style={styles.childName}>{child.name}</Text>
                   <Text style={styles.childMeta}>
                     {formatAge(child.birthdate)} {formatBirthdate(child.birthdate)}
                   </Text>
                 </View>
                 <View style={styles.childActions}>
                   <Pressable
-                    style={styles.editChildButton}
+                    style={styles.iconButton}
                     onPress={() => onEditChild(child.id)}
                   >
-                    <MaterialIcons name="edit" size={20} color="#67A8FF" />
+                    <MaterialIcons name="edit" size={20} color={colors.link} />
                   </Pressable>
                   <Pressable
-                    style={styles.deleteChildButton}
+                    style={styles.iconButton}
                     onPress={() => onDeleteChild(child.id)}
                   >
-                    <MaterialIcons name="delete-outline" size={22} color="#FF7C9C" />
+                    <MaterialIcons name="delete-outline" size={22} color={colors.danger} />
                   </Pressable>
                 </View>
               </View>
@@ -120,39 +94,69 @@ export function SettingsModal({
           </View>
         </View>
 
-        {items.map((item, index) => (
-          <Pressable
-            key={item.title}
-            style={[
-              styles.item,
-              index === items.length - 1 ? styles.itemLast : null,
-            ]}
-            onPress={item.onPress}
-          >
-            <View style={styles.itemTitleRow}>
-              <EmojiIcon name={item.icon} size={22} />
-              <Text style={styles.itemTitle}>{item.title}</Text>
-            </View>
-            <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
-          </Pressable>
-        ))}
+        {/* 法的情報 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeaderText}>法的情報</Text>
+          <View style={styles.group}>
+            {legalItems.map((item, index) => (
+              <Pressable
+                key={item.title}
+                style={[
+                  styles.listRow,
+                  index < legalItems.length - 1 ? styles.listRowBorder : null,
+                ]}
+                onPress={item.onPress}
+              >
+                <Text style={styles.listRowText}>{item.title}</Text>
+                <MaterialIcons name="chevron-right" size={22} color={colors.chevron} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* アカウントの削除 */}
+        <View style={styles.section}>
+          <View style={styles.group}>
+            <Pressable style={styles.dangerRow} onPress={onDeleteAccount}>
+              <Text style={styles.dangerRowText}>アカウントの削除</Text>
+              <MaterialIcons name="chevron-right" size={22} color={colors.chevron} />
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
+// 他ページ（HomeScreen, ProfileTabs等）のトンマナに合わせた配色
+const colors = {
+  bg: "#1A0F2E",
+  groupBg: "#FFFFFF10",
+  groupBorder: "#FFFFFF14",
+  text: "#FFFFFFEE",
+  textSecondary: "#FFFFFF99",
+  link: "#67A8FF",
+  danger: "#FF7C9C",
+  separator: "#FFFFFF12",
+  chevron: "#FFFFFF66",
+};
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#1A0F2E",
+    backgroundColor: colors.bg,
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 48,
+    paddingTop: 16,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 20,
+    backgroundColor: colors.bg,
   },
   backButton: {
     width: 32,
@@ -163,129 +167,127 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    color: "#FFFFFF",
+    color: colors.text,
     fontSize: 18,
     fontFamily: "PlusJakartaSans_700Bold",
   },
   content: {
-    paddingBottom: 24,
-  },
-  childSection: {
     paddingHorizontal: 20,
-    paddingBottom: 8,
-    gap: 16,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
-  childSectionHeader: {
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
+    color: colors.text,
+    fontSize: 20,
     fontFamily: "PlusJakartaSans_700Bold",
+  },
+  sectionHeaderText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    marginBottom: 6,
+    marginLeft: 4,
   },
   addChildButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1E73E8",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: "#FFFFFF18",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 14,
   },
-  itemTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
   addChildButtonText: {
-    color: "#FFFFFF",
+    color: colors.link,
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "Inter_600SemiBold",
   },
-  childList: {
-    backgroundColor: "#FFFFFF10",
+  group: {
+    backgroundColor: colors.groupBg,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#FFFFFF14",
+    borderColor: colors.groupBorder,
     overflow: "hidden",
   },
-  childCard: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 18,
-    paddingVertical: 18,
-    gap: 12,
+    paddingVertical: 16,
   },
-  childCardBorder: {
+  rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "#FFFFFF12",
+    borderBottomColor: colors.separator,
   },
   childInfo: {
     flex: 1,
-    gap: 6,
-  },
-  childNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    gap: 4,
   },
   childName: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    color: colors.text,
+    fontSize: 17,
+    fontFamily: "Inter_600SemiBold",
   },
   childMeta: {
-    color: "#FFFFFF99",
+    color: colors.textSecondary,
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-  },
-  deleteChildButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF0D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editChildButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF0D",
-    alignItems: "center",
-    justifyContent: "center",
   },
   childActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF0D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  listRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.separator,
+  },
+  listRowText: {
+    color: colors.link,
+    fontSize: 16,
+    fontFamily: "Inter_500Medium",
+  },
+  dangerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  dangerRowText: {
+    color: colors.danger,
+    fontSize: 16,
+    fontFamily: "Inter_500Medium",
+  },
   spacer: {
     width: 32,
     height: 32,
-  },
-  item: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#FFFFFF12",
-    gap: 3,
-  },
-  itemLast: {
-    borderBottomWidth: 0,
-  },
-  itemTitle: {
-    color: "#FFFFFFEE",
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-  },
-  itemSubtitle: {
-    color: "#FFFFFF66",
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
   },
 });
 

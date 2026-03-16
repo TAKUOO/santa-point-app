@@ -24,6 +24,7 @@ import { calculateMedalCount, getCurrentMedalRank } from "./constants/medals";
 import {
   assignSanta,
   buildSantaReply,
+  buildSantaSpeechReply,
   createDemoLetters,
   extractWishlistItem,
   createInitialChatHistory,
@@ -234,6 +235,7 @@ export default function App() {
     };
     const wishlistAdded =
       !!wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate);
+    const santaSpeechText = buildSantaSpeechReply(text, points, wishlistAdded);
     const santaMessage: ChatMessage = {
       id: createUniqueId("chat"),
       role: "santa",
@@ -271,7 +273,7 @@ export default function App() {
       }),
     );
 
-    return santaMessage.text;
+    return santaSpeechText;
   }
 
   function handleMarkLetterRead(letterId: string) {

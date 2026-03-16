@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
 import { daysUntilChristmas, getRoomTimeSlot, RoomTimeSlot } from "../../services/santa";
@@ -13,6 +21,22 @@ const NORMAL_ROOM_SCENES: Record<RoomTimeSlot, number> = {
   morning: require("../../assets/generated/rooms/normal/normal-santa-morning.png"),
   daytime: require("../../assets/generated/rooms/normal/normal-santa-daytime.png"),
   night: require("../../assets/generated/rooms/normal/normal-santa-night.png"),
+};
+
+const ROOM_IMAGE_ASPECT_RATIO = 320 / 303;
+const ROOM_SIDE_PADDING = 14;
+const ROOM_MAX_WIDTH = 400;
+const TOP_PADDING = 24;
+const STATS_TO_LETTER_GAP = 20;
+const LETTER_TO_ROOM_GAP = 28;
+const STATS_TO_ROOM_GAP = 24;
+const ROOM_TO_WISHLIST_GAP = 28;
+const SCROLL_BOTTOM_PADDING = 120;
+const HIT_SANTA_FRAME = {
+  top: 105 / 303,
+  left: 180 / 320,
+  width: 90 / 320,
+  height: 90 / 303,
 };
 
 type Props = {
@@ -39,6 +63,7 @@ export function HomeScreen({
 }: Props) {
   const dayCount = daysUntilChristmas();
   const [roomTimeSlot, setRoomTimeSlot] = useState<RoomTimeSlot>(() => getRoomTimeSlot());
+  const { width: windowWidth } = useWindowDimensions();
 
   useEffect(() => {
     const updateRoomTimeSlot = () => setRoomTimeSlot(getRoomTimeSlot());
@@ -47,6 +72,19 @@ export function HomeScreen({
 
     return () => clearInterval(timer);
   }, []);
+
+  const roomWidth = Math.min(windowWidth - ROOM_SIDE_PADDING * 2, ROOM_MAX_WIDTH);
+  const roomHeight = roomWidth / ROOM_IMAGE_ASPECT_RATIO;
+  const roomHorizontalInset = Math.max(
+    ROOM_SIDE_PADDING,
+    (windowWidth - roomWidth) / 2,
+  );
+  const hitSantaStyle = {
+    top: roomHeight * HIT_SANTA_FRAME.top,
+    left: roomWidth * HIT_SANTA_FRAME.left,
+    width: roomWidth * HIT_SANTA_FRAME.width,
+    height: roomHeight * HIT_SANTA_FRAME.height,
+  };
 
   return (
     <>
@@ -58,30 +96,57 @@ export function HomeScreen({
       />
 
       <View style={styles.roomScene}>
-        <StatsBadges
-          daysUntilChristmas={dayCount}
-          medalCount={activeChild.medals.length}
-          pointsThisYear={activeChild.pointsThisYear}
-        />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.scrollInner}>
+            <StatsBadges
+              daysUntilChristmas={dayCount}
+              medalCount={activeChild.medals.length}
+              pointsThisYear={activeChild.pointsThisYear}
+              inline
+            />
 
-        {unreadCount > 0 ? (
-          <View style={styles.letterBubbleContainer}>
-            <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
-              <EmojiIcon name="incomingEnvelope" size={16} />
-              <Text style={styles.letterBubbleText}>サンタからお手紙が届いたよ！</Text>
-            </Pressable>
+            {unreadCount > 0 ? (
+              <View style={[styles.letterBubbleWrapper, { marginTop: STATS_TO_LETTER_GAP }]}>
+                <Pressable style={styles.letterBubble} onPress={onOpenLetters}>
+                  <EmojiIcon name="incomingEnvelope" size={16} />
+                  <Text style={styles.letterBubbleText}>サンタからお手紙が届いたよ！</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            <View
+              style={[
+                styles.roomWrapper,
+                {
+                  marginTop: unreadCount > 0 ? LETTER_TO_ROOM_GAP : STATS_TO_ROOM_GAP,
+                  marginHorizontal: roomHorizontalInset,
+                },
+              ]}
+            >
+              <View style={styles.roomContainer}>
+                <Image
+                  source={NORMAL_ROOM_SCENES[roomTimeSlot]}
+                  style={[styles.roomImage, { width: roomWidth, height: roomHeight }]}
+                />
+                <Pressable style={[styles.hitSanta, hitSantaStyle]} onPress={onOpenTalk} />
+              </View>
+            </View>
+
+            <View style={[styles.wishlistWrapper, { marginTop: ROOM_TO_WISHLIST_GAP }]}>
+              <WishListCard
+                inline
+                items={activeChild.wishlist}
+                onRemoveItem={onRemoveWishlistItem}
+              />
+            </View>
+
+            <View style={{ height: SCROLL_BOTTOM_PADDING }} />
           </View>
-        ) : null}
-
-        <View style={styles.roomContainer}>
-          <Image
-            source={NORMAL_ROOM_SCENES[roomTimeSlot]}
-            style={styles.roomImage}
-          />
-          <Pressable style={styles.hitSanta} onPress={onOpenTalk} />
-        </View>
-
-        <WishListCard items={activeChild.wishlist} onRemoveItem={onRemoveWishlistItem} />
+        </ScrollView>
 
         <Pressable style={styles.talkButton} onPress={onOpenTalk}>
           <MaterialIcons name="mic" size={24} color="#FFFFFF" />
@@ -95,15 +160,21 @@ export function HomeScreen({
 const styles = StyleSheet.create({
   roomScene: {
     flex: 1,
-    overflow: "hidden",
     backgroundColor: "#1A0F2E",
   },
-  letterBubbleContainer: {
-    position: "absolute",
-    top: 160,
-    left: 0,
-    right: 0,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: TOP_PADDING,
+  },
+  scrollInner: {
+    paddingHorizontal: 0,
+  },
+  letterBubbleWrapper: {
     alignItems: "center",
+    paddingHorizontal: 14,
   },
   letterBubble: {
     flexDirection: "row",
@@ -119,24 +190,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },
+  roomWrapper: {
+    alignItems: "center",
+  },
+  wishlistWrapper: {
+    paddingHorizontal: 0,
+  },
   roomContainer: {
-    position: "absolute",
-    top: 238,
-    left: 0,
-    right: 0,
+    position: "relative",
     alignItems: "center",
     zIndex: 3,
   },
-  roomImage: {
-    width: 320,
-    height: 303,
-  },
+  roomImage: {},
   hitSanta: {
     position: "absolute",
-    top: 105,
-    left: 180,
-    width: 90,
-    height: 90,
     zIndex: 4,
   },
   talkButton: {

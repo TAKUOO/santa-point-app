@@ -73,7 +73,12 @@ function normalizeSpeechText(text: string): string {
   return text.replace(/\n+/g, " ").trim();
 }
 
-async function speakWithElevenLabs(text: string): Promise<boolean> {
+type SpeakingCallbacks = { onStart?: () => void; onEnd?: () => void };
+
+async function speakWithElevenLabs(
+  text: string,
+  callbacks?: SpeakingCallbacks,
+): Promise<boolean> {
   const { apiKey, voiceId } = getElevenLabsConfig();
   if (!apiKey || !voiceId) {
     return false;
@@ -129,8 +134,10 @@ async function speakWithElevenLabs(text: string): Promise<boolean> {
           FileSystem.deleteAsync(currentElevenLabsAudioUri, { idempotent: true }).catch(() => {});
           currentElevenLabsAudioUri = null;
         }
+        callbacks?.onEnd?.();
       }
     });
+    callbacks?.onStart?.();
     player.play();
 
     return true;
@@ -139,13 +146,22 @@ async function speakWithElevenLabs(text: string): Promise<boolean> {
   }
 }
 
-export async function speakSantaReply(text: string): Promise<void> {
+export type SpeakSantaReplyOptions = {
+  onStart?: () => void;
+  onEnd?: () => void;
+};
+
+export async function speakSantaReply(
+  text: string,
+  options?: SpeakSantaReplyOptions,
+): Promise<void> {
+  const { onStart, onEnd } = options ?? {};
   const normalizedText = normalizeSpeechText(text);
   if (!normalizedText) {
     return;
   }
 
-  const usedElevenLabs = await speakWithElevenLabs(normalizedText);
+  const usedElevenLabs = await speakWithElevenLabs(normalizedText, { onStart, onEnd });
   if (usedElevenLabs) {
     return;
   }
@@ -157,11 +173,16 @@ export async function speakSantaReply(text: string): Promise<void> {
 
   const voiceId = await getPreferredVoice();
 
+  onStart?.();
+
   Speech.speak(normalizedText, {
     language: DEFAULT_LANGUAGE,
     voice: voiceId,
     pitch: 0.92,
     rate: 0.88,
+    onDone: () => onEnd?.(),
+    onStopped: () => onEnd?.(),
+    onError: (_err: Error) => onEnd?.(),
   });
 }
 

@@ -15,7 +15,7 @@ export function getRandomPoints(): number {
 
 export function buildSantaReply(
   child: Child,
-  reportText: string,
+  _reportText: string,
   points: number,
   wishlistAdded: boolean,
 ): string {
@@ -29,17 +29,59 @@ export function buildSantaReply(
     return wishlistReplies[points % wishlistReplies.length];
   }
 
-  const starters = [
-    "おっほっほ！",
-    "わあ、すてきだね！",
-    "それはうれしいおしらせだ！",
-    "ちゃんときかせてくれてありがとう！",
-  ];
+  const starters = ["おっほっほ！", "わあ、すてきだね！", "それはうれしいおしらせだ！"];
   const praise = [
-    `${child.name}ちゃん、よくがんばったね！`,
-    `${child.name}ちゃんって、ほんとうにえらいね！`,
-    `そんなおはなしがきけてうれしいよ！`,
-    `きみの「できた！」はとてもすてきだよ！`,
+    `${child.name}ちゃん、きょうもがんばったね！`,
+    `${child.name}ちゃん、よくできたね、えらいぞ！`,
+    `${child.name}ちゃん、がんばりをきけてサンタもうれしいよ！`,
+    `${child.name}ちゃん、そのちょうしだよ！`,
+  ];
+  const encouragement = [
+    `${child.name}ちゃん、これからもいっしょにがんばろうね！`,
+    `${child.name}ちゃんの「できた！」はとってもすてきだよ！`,
+    "サンタはいつでもみかただよ！",
+    "またおはなしをきかせてね！",
+  ];
+  const closers = [
+    `${points}ポイントプレゼントだよ！`,
+    `きょうは ${points}ポイントをどうぞ！`,
+    `${points}ポイントをサンタからおくるね！`,
+  ];
+  return [
+    starters[points % starters.length],
+    praise[points % praise.length],
+    encouragement[points % encouragement.length],
+    closers[points % closers.length],
+  ].join("\n");
+}
+
+export function buildSantaSpeechReply(
+  _reportText: string,
+  points: number,
+  wishlistAdded: boolean,
+): string {
+  const wishlistReplies = [
+    "わかったよ！欲しいものに追加して覚えておくね！",
+    "おっほっほ！欲しいものリストにのせておくね！",
+    "ちゃんとメモしたよ！楽しみにしていてね！",
+  ];
+
+  if (wishlistAdded) {
+    return wishlistReplies[points % wishlistReplies.length];
+  }
+
+  const starters = ["おっほっほ！", "わあ、すてきだね！", "それはうれしいおしらせだ！"];
+  const praise = [
+    "きょうもがんばったね！",
+    "よくできたね、えらいぞ！",
+    "がんばりをきけてサンタもうれしいよ！",
+    "そのちょうしだよ！",
+  ];
+  const encouragement = [
+    "これからもいっしょにがんばろうね！",
+    "きみの「できた！」はとってもすてきだよ！",
+    "サンタはいつでもみかただよ！",
+    "またおはなしをきかせてね！",
   ];
   const closers = [
     `${points}ポイントプレゼントだよ！`,
@@ -47,14 +89,12 @@ export function buildSantaReply(
     `${points}ポイントをサンタからおくるね！`,
   ];
 
-  const mention =
-    reportText.length > 18
-      ? "たくさんおしえてくれてありがとう！"
-      : `${reportText}っておはなししてくれたんだね！`;
-
-  return [starters[points % starters.length], praise[points % praise.length], mention, closers[points % closers.length]].join(
-    "\n",
-  );
+  return [
+    starters[points % starters.length],
+    praise[points % praise.length],
+    encouragement[points % encouragement.length],
+    closers[points % closers.length],
+  ].join("\n");
 }
 
 export function extractWishlistItem(text: string): string | null {

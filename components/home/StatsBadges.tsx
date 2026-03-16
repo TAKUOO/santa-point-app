@@ -6,17 +6,19 @@ type Props = {
   daysUntilChristmas: number;
   medalCount: number;
   pointsThisYear: number;
+  inline?: boolean;
 };
 
 export function StatsBadges({
   daysUntilChristmas,
   medalCount,
   pointsThisYear,
+  inline,
 }: Props) {
   const currentRank = getCurrentMedalRank(medalCount);
 
   return (
-    <View style={styles.statusBlock}>
+    <View style={[styles.statusBlock, inline && styles.statusBlockInline]}>
       <View style={styles.statusColumn}>
         <View style={styles.numberRow}>
           <Text style={styles.value}>{daysUntilChristmas}</Text>
@@ -66,6 +68,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "center",
     paddingVertical: 12,
+  },
+  statusBlockInline: {
+    position: "relative",
+    top: undefined,
+    left: undefined,
+    right: undefined,
   },
   statusColumn: {
     alignItems: "center",

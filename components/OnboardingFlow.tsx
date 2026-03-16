@@ -84,6 +84,7 @@ export function OnboardingFlow({
               <Text style={styles.primaryButtonText}>あたらしくはじめる</Text>
             </View>
           </Pressable>
+          {/* リリース時は不要のためコメントアウト
           <Pressable
             style={styles.secondaryButton}
             onPress={() => Alert.alert("データをひきつぐ", "このきのうはじゅんびちゅうです")}
@@ -93,6 +94,7 @@ export function OnboardingFlow({
               <Text style={styles.secondaryButtonText}>データをひきついではじめる</Text>
             </View>
           </Pressable>
+          */}
         </View>
       ) : null}
 
