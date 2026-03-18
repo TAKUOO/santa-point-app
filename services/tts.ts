@@ -2,6 +2,7 @@ import { Buffer } from "buffer";
 import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Speech from "expo-speech";
+import { SANTA_VOICE_ASSETS, SantaVoiceClipId } from "../constants/santaVoicePack";
 
 const DEFAULT_LANGUAGE = "ja-JP";
 const ELEVENLABS_MODEL = "eleven_multilingual_v2";
@@ -17,12 +18,14 @@ type AudioPlayerLike = {
 };
 
 type ExpoAudioLike = {
-  createAudioPlayer: (source: string) => AudioPlayerLike;
+  createAudioPlayer: (source: string | number) => AudioPlayerLike;
 };
 
 let currentElevenLabsPlayer: AudioPlayerLike | null = null;
 let currentElevenLabsAudioUri: string | null = null;
 let cachedExpoAudioModule: ExpoAudioLike | null | undefined;
+
+const LOCAL_AUDIO_PREFIX = "__LOCAL_SANTA_AUDIO__:";
 
 function getExpoAudioModule(): ExpoAudioLike | null {
   if (cachedExpoAudioModule !== undefined) {
@@ -146,10 +149,43 @@ async function speakWithElevenLabs(
   }
 }
 
+async function speakLocalSantaAudio(
+  clipId: SantaVoiceClipId,
+  callbacks?: SpeakSantaReplyOptions,
+): Promise<boolean> {
+  const ExpoAudio = getExpoAudioModule();
+  if (!ExpoAudio) {
+    return false;
+  }
+
+  await stopSantaSpeech();
+
+  try {
+    const player = ExpoAudio.createAudioPlayer(SANTA_VOICE_ASSETS[clipId]);
+    currentElevenLabsPlayer = player;
+    player.addListener?.("playbackStatusUpdate", (status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        currentElevenLabsPlayer = null;
+        player.remove?.();
+        callbacks?.onEnd?.();
+      }
+    });
+    callbacks?.onStart?.();
+    player.play();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type SpeakSantaReplyOptions = {
   onStart?: () => void;
   onEnd?: () => void;
 };
+
+export function createLocalSantaAudioToken(clipId: SantaVoiceClipId): string {
+  return `${LOCAL_AUDIO_PREFIX}${clipId}`;
+}
 
 export async function speakSantaReply(
   text: string,
@@ -159,6 +195,19 @@ export async function speakSantaReply(
   const normalizedText = normalizeSpeechText(text);
   if (!normalizedText) {
     return;
+  }
+
+  if (normalizedText.startsWith(LOCAL_AUDIO_PREFIX)) {
+    const clipId = normalizedText.slice(LOCAL_AUDIO_PREFIX.length);
+    if (clipId in SANTA_VOICE_ASSETS) {
+      const playedLocal = await speakLocalSantaAudio(
+        clipId as SantaVoiceClipId,
+        { onStart, onEnd },
+      );
+      if (playedLocal) {
+        return;
+      }
+    }
   }
 
   const usedElevenLabs = await speakWithElevenLabs(normalizedText, { onStart, onEnd });

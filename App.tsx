@@ -23,8 +23,6 @@ import { MEDAL_SANTA_IDS } from "./constants/santas";
 import { calculateMedalCount, getCurrentMedalRank } from "./constants/medals";
 import {
   assignSanta,
-  buildSantaReply,
-  buildSantaSpeechReply,
   createDemoLetters,
   extractWishlistItem,
   createInitialChatHistory,
@@ -33,6 +31,7 @@ import {
   getRandomPoints,
   normalizeChildForCurrentYear,
 } from "./services/santa";
+import { pickSantaReplyClipId, SANTA_VOICE_TEXTS } from "./constants/santaVoicePack";
 import {
   clearStoredAppData,
   loadActiveChildId,
@@ -40,7 +39,7 @@ import {
   saveActiveChildId,
   saveChildren,
 } from "./services/storage";
-import { stopSantaSpeech } from "./services/tts";
+import { createLocalSantaAudioToken, stopSantaSpeech } from "./services/tts";
 import { ChatMessage, Child } from "./types";
 
 type ActiveModal = "talk" | "letters" | null;
@@ -235,11 +234,13 @@ export default function App() {
     };
     const wishlistAdded =
       !!wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate);
-    const santaSpeechText = buildSantaSpeechReply(text, points, wishlistAdded);
+    const santaClipId = pickSantaReplyClipId(points, wishlistAdded);
+    const santaDisplayText = SANTA_VOICE_TEXTS[santaClipId];
+    const santaSpeechText = createLocalSantaAudioToken(santaClipId);
     const santaMessage: ChatMessage = {
       id: createUniqueId("chat"),
       role: "santa",
-      text: buildSantaReply(activeChild, text, points, wishlistAdded),
+      text: santaDisplayText,
       points: wishlistAdded ? undefined : points,
       timestamp: new Date().toISOString(),
     };

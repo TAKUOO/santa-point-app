@@ -1,10 +1,6 @@
 import { fal } from "@fal-ai/client";
-import { execFile } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { promisify } from "node:util";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-
-const execFileAsync = promisify(execFile);
 
 const SCENES = {
   "late-night": {
@@ -38,22 +34,39 @@ const SCENES = {
 };
 
 const DEFAULT_SLOTS = ["late-night", "morning", "daytime", "night"];
-const OUTPUT_DIR = path.resolve("assets/generated/rooms/normal");
-const RAW_OUTPUT_DIR = path.join(OUTPUT_DIR, "raw");
-const ROOM_REFERENCE_PATH = path.resolve("assets/rooms/room-default.png");
-const SANTA_FACE_REFERENCE_PATH = path.resolve("assets/rooms/santas/normal-santa.png");
+const SUPPORTED_RANKS = ["normal", "bronze", "silver", "gold"];
+const ROOM_BASE_DIR = path.resolve("assets/generated/rooms/normal");
+const OUTPUT_BASE_DIR = path.resolve("assets/generated/rooms");
+const RANK_PROMPTS = {
+  normal: "normal classic red Santa",
+  bronze: "bronze metallic Santa",
+  silver: "silver metallic Santa",
+  gold: "gold metallic Santa",
+};
+const RANK_STYLE_NOTES = {
+  normal:
+    "keep Santa skin on the face and hands natural peach-toned, with a classic red hat, white beard, and warm red clothing",
+  bronze:
+    "keep Santa skin on the face and hands natural peach-toned, never metallic bronze, keep the beard and mustache white, use the bronze reference only for the hat styling, keep the outfit in bronze-inspired warm brown, copper, muted red, and cream tones, avoid a full bronze statue look",
+  silver:
+    "keep Santa skin on the face and hands natural peach-toned, never metallic silver, keep the beard and mustache white, use the silver reference only for the hat styling, make the outfit clearly silver-themed with silver, white, pale blue, and cool blue-gray clothing, remove red from the outfit, make the coat and sleeves visibly read as silver or blue-toned, avoid a full silver statue look",
+  gold:
+    "keep Santa skin on the face and hands natural peach-toned, never metallic gold, keep the beard and mustache white, use the gold reference only for the hat styling, make the outfit clearly gold-themed with yellow, golden, orange, amber, and warm cream clothing, remove red from the outfit, make the coat and sleeves visibly read as gold or orange-toned, avoid a full gold statue look",
+};
 const BASE_PROMPT = [
   "use image 1 as the main reference for the exact room composition",
   "keep the same room layout, same camera angle, same wall shape, same tree position, same fireplace position, same window position, same chair position, same desk position, same floor shape, same reindeer position",
-  "use image 2 as the face reference for the normal Santa",
-  "match the Santa face style from image 2: red hat, round red nose, blush cheeks, white curly mustache and beard, cute cheerful clay expression",
+  "use image 2 as the Santa design reference",
+  "match the Santa face and material style from image 2 while keeping the same room composition",
+  "do not recolor the room itself",
+  "keep the tree, gifts, fireplace, desk, walls, window, chair, floor, and room decorations in the same colors as image 1",
   "keep the output in isometric 3D clay diorama style",
   "winter fixed room theme",
   "keep a plain dark purple background around the room like the base image",
   "do not redesign the room",
   "do not change the room scale or framing",
   "do not create a second room, outer room, inset room, duplicate wall, or room inside room",
-  "only adjust Santa pose, lighting, and small time-of-day details",
+  "replace only the Santa appearance and small lighting details needed for the current rank and time slot",
   "keep only one Santa",
   "no text, no collage, no split view, no extra characters",
 ].join(". ");
@@ -82,7 +95,7 @@ async function loadEnvLocal() {
 }
 
 function parseArgs(argv) {
-  const args = { dryRun: false, slot: null };
+  const args = { dryRun: false, slot: null, rank: null };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (token === "--dry-run") {
@@ -92,17 +105,35 @@ function parseArgs(argv) {
     if (token === "--slot") {
       args.slot = argv[i + 1] ?? null;
       i += 1;
+      continue;
+    }
+    if (token === "--rank") {
+      args.rank = argv[i + 1] ?? null;
+      i += 1;
     }
   }
   return args;
 }
 
-function buildPrompt(slotKey) {
+function buildPrompt(rankKey, slotKey) {
   const scene = SCENES[slotKey];
   if (!scene) {
     throw new Error(`未対応のslotです: ${slotKey}`);
   }
-  return `${BASE_PROMPT}. ${scene.detail}.`;
+  const rankPrompt = RANK_PROMPTS[rankKey];
+  const rankStyleNote = RANK_STYLE_NOTES[rankKey];
+  if (!rankPrompt) {
+    throw new Error(`未対応のrankです: ${rankKey}`);
+  }
+  const outfitReferenceNote =
+    slotKey === "morning"
+      ? ""
+      : "use image 3 as the exact outfit color reference for Santa, and keep the same coat, sleeves, pants, and overall clothing palette as image 3.";
+  const sleepSlotNote =
+    slotKey === "late-night"
+      ? "for the bedtime scene, keep Santa skin natural, keep the beard white, keep any blanket or bed fabric in normal cozy fabric colors, and keep the pajamas or sleepwear in the same palette as image 3 instead of turning the whole body gold or silver."
+      : "";
+  return `${BASE_PROMPT}. ${outfitReferenceNote} ${sleepSlotNote} make the Santa clearly read as ${rankPrompt}. ${rankStyleNote}. ${scene.detail}.`;
 }
 
 function getMimeType(filePath) {
@@ -128,34 +159,42 @@ async function saveImage(url, outputPath) {
   await writeFile(outputPath, Buffer.from(arrayBuffer));
 }
 
-async function makeTransparentPng(inputPath, outputPath) {
-  await execFileAsync("magick", [
-    inputPath,
-    "-alpha",
-    "set",
-    "-fuzz",
-    "18%",
-    "-fill",
-    "none",
-    "-draw",
-    "color 1,1 floodfill",
-    "-draw",
-    "color 1022,1 floodfill",
-    "-draw",
-    "color 1,1022 floodfill",
-    "-draw",
-    "color 1022,1022 floodfill",
-    outputPath,
-  ]);
+async function finalizeImage(inputPath, outputPath) {
+  await copyFile(inputPath, outputPath);
 }
 
-async function generateSlot(slotKey) {
+function getBaseRoomPath(slotKey) {
   const scene = SCENES[slotKey];
-  const prompt = buildPrompt(slotKey);
+  return path.join(ROOM_BASE_DIR, scene.filename);
+}
+
+function getSantaReferencePath(rankKey) {
+  return path.resolve(`assets/rooms/santas/${rankKey}-santa.png`);
+}
+
+function getOutputPaths(rankKey, slotKey) {
+  const scene = SCENES[slotKey];
+  const outputDir = path.join(OUTPUT_BASE_DIR, rankKey);
+  const rawOutputDir = path.join(outputDir, "raw");
+  const outputFilename = `${rankKey}-santa-${slotKey}.png`;
+  return {
+    outputDir,
+    rawOutputDir,
+    outputPath: path.join(outputDir, outputFilename),
+    rawOutputPath: path.join(rawOutputDir, outputFilename),
+  };
+}
+
+async function generateSlot(rankKey, slotKey) {
+  const scene = SCENES[slotKey];
+  const prompt = buildPrompt(rankKey, slotKey);
   const imageUrls = [
-    await readAsDataUri(ROOM_REFERENCE_PATH),
-    await readAsDataUri(SANTA_FACE_REFERENCE_PATH),
+    await readAsDataUri(getBaseRoomPath(slotKey)),
+    await readAsDataUri(getSantaReferencePath(rankKey)),
   ];
+  if (slotKey !== "morning") {
+    imageUrls.push(await readAsDataUri(path.join(OUTPUT_BASE_DIR, rankKey, `${rankKey}-santa-morning.png`)));
+  }
   const result = await fal.subscribe("fal-ai/nano-banana-2/edit", {
     input: {
       prompt,
@@ -174,30 +213,37 @@ async function generateSlot(slotKey) {
     throw new Error(`${scene.label}: 画像URLが取得できませんでした。`);
   }
 
-  const rawOutputPath = path.join(RAW_OUTPUT_DIR, scene.filename);
-  const outputPath = path.join(OUTPUT_DIR, scene.filename);
+  const { rawOutputPath, outputPath } = getOutputPaths(rankKey, slotKey);
   await saveImage(imageUrl, rawOutputPath);
-  await makeTransparentPng(rawOutputPath, outputPath);
-  console.log(`✅ ${scene.label}: ${outputPath}`);
+  await finalizeImage(rawOutputPath, outputPath);
+  console.log(`✅ ${rankKey}/${scene.label}: ${outputPath}`);
 }
 
 async function main() {
   await loadEnvLocal();
 
-  const { dryRun, slot } = parseArgs(process.argv.slice(2));
+  const { dryRun, slot, rank } = parseArgs(process.argv.slice(2));
   const targetSlots = slot ? [slot] : DEFAULT_SLOTS;
+  const targetRanks = rank ? [rank] : SUPPORTED_RANKS.filter((item) => item !== "normal");
 
   for (const slotKey of targetSlots) {
     if (!SCENES[slotKey]) {
       throw new Error(`未対応のslotです: ${slotKey}`);
     }
   }
+  for (const rankKey of targetRanks) {
+    if (!SUPPORTED_RANKS.includes(rankKey)) {
+      throw new Error(`未対応のrankです: ${rankKey}`);
+    }
+  }
 
   if (dryRun) {
-    for (const slotKey of targetSlots) {
-      console.log(`--- ${slotKey} ---`);
-      console.log(buildPrompt(slotKey));
-      console.log("");
+    for (const rankKey of targetRanks) {
+      for (const slotKey of targetSlots) {
+        console.log(`--- ${rankKey}/${slotKey} ---`);
+        console.log(buildPrompt(rankKey, slotKey));
+        console.log("");
+      }
     }
     return;
   }
@@ -208,12 +254,15 @@ async function main() {
   }
 
   fal.config({ credentials: falKey });
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  await mkdir(RAW_OUTPUT_DIR, { recursive: true });
+  for (const rankKey of targetRanks) {
+    const { outputDir, rawOutputDir } = getOutputPaths(rankKey, targetSlots[0]);
+    await mkdir(outputDir, { recursive: true });
+    await mkdir(rawOutputDir, { recursive: true });
 
-  for (const slotKey of targetSlots) {
-    await generateSlot(slotKey);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    for (const slotKey of targetSlots) {
+      await generateSlot(rankKey, slotKey);
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
   }
 }
 

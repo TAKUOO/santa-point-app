@@ -143,7 +143,10 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
     if (santaReply) {
       speakSantaReply(santaReply, {
         onStart: () => setIsSantaSpeaking(true),
-        onEnd: () => setIsSantaSpeaking(false),
+        onEnd: () => {
+          setIsSantaSpeaking(false);
+          onClose();
+        },
       });
     }
     // チャット履歴には切り替えず、サンタとの音声画面のまま返答を読み上げる

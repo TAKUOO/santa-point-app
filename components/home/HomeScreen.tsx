@@ -9,19 +9,14 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { getCurrentMedalRank } from "../../constants/medals";
+import { getRoomSceneSource } from "../../constants/roomScenes";
 import { Child } from "../../types";
 import { daysUntilChristmas, getRoomTimeSlot, RoomTimeSlot } from "../../services/santa";
 import { EmojiIcon } from "../common/EmojiIcon";
 import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
 import { WishListCard } from "./WishListCard";
-
-const NORMAL_ROOM_SCENES: Record<RoomTimeSlot, number> = {
-  lateNight: require("../../assets/generated/rooms/normal/normal-santa-late-night.png"),
-  morning: require("../../assets/generated/rooms/normal/normal-santa-morning.png"),
-  daytime: require("../../assets/generated/rooms/normal/normal-santa-daytime.png"),
-  night: require("../../assets/generated/rooms/normal/normal-santa-night.png"),
-};
 
 const ROOM_IMAGE_ASPECT_RATIO = 320 / 303;
 const ROOM_SIDE_PADDING = 14;
@@ -86,6 +81,10 @@ export function HomeScreen({
     height: roomHeight * HIT_SANTA_FRAME.height,
   };
 
+  const isSantaSleeping = roomTimeSlot === "lateNight";
+  const currentRankId = getCurrentMedalRank(activeChild.medals.length).id;
+  const roomSceneSource = getRoomSceneSource(currentRankId, roomTimeSlot);
+
   return (
     <>
       <ProfileTabs
@@ -129,10 +128,14 @@ export function HomeScreen({
             >
               <View style={styles.roomContainer}>
                 <Image
-                  source={NORMAL_ROOM_SCENES[roomTimeSlot]}
+                  source={roomSceneSource}
                   style={[styles.roomImage, { width: roomWidth, height: roomHeight }]}
                 />
-                <Pressable style={[styles.hitSanta, hitSantaStyle]} onPress={onOpenTalk} />
+                <Pressable
+                  style={[styles.hitSanta, hitSantaStyle]}
+                  onPress={isSantaSleeping ? undefined : onOpenTalk}
+                  disabled={isSantaSleeping}
+                />
               </View>
             </View>
 
@@ -148,9 +151,19 @@ export function HomeScreen({
           </View>
         </ScrollView>
 
-        <Pressable style={styles.talkButton} onPress={onOpenTalk}>
-          <MaterialIcons name="mic" size={24} color="#FFFFFF" />
-          <Text style={styles.talkButtonText}>サンタさんとはなす</Text>
+        <Pressable
+          style={[styles.talkButton, isSantaSleeping && styles.talkButtonDisabled]}
+          onPress={isSantaSleeping ? undefined : onOpenTalk}
+          disabled={isSantaSleeping}
+        >
+          <MaterialIcons
+            name="mic"
+            size={24}
+            color={isSantaSleeping ? "#FFFFFF99" : "#FFFFFF"}
+          />
+          <Text style={styles.talkButtonText}>
+            {isSantaSleeping ? "サンタは寝ているよ" : "サンタさんとはなす"}
+          </Text>
         </Pressable>
       </View>
     </>
@@ -219,6 +232,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 28,
+  },
+  talkButtonDisabled: {
+    backgroundColor: "#6B4A47",
+    opacity: 0.9,
   },
   talkButtonText: {
     color: "#FFFFFF",

@@ -8,6 +8,8 @@
     "android": "CI=false expo start --android",
     "ios": "CI=false expo start --ios",
     "web": "CI=false expo start --web",
+    "generate:santa:voices": "node scripts/generate-santa-voices.mjs",
+    "generate:santa:voices:dry": "node scripts/generate-santa-voices.mjs --dry-run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
