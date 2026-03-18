@@ -29,7 +29,7 @@ const SCENES = {
     filename: "normal-santa-night.png",
     seed: 5104,
     detail:
-      "change the base room to night: warm fireplace glow and lamp light, Santa is drinking tea in the chair or changing into pajamas with a calm evening mood before bedtime",
+      "change the base room to night: warm fireplace glow and lamp light, Santa is sitting in the chair holding a coffee cup in his hand, drinking coffee with a calm evening mood before bedtime, the coffee cup must be clearly visible",
   },
 };
 
@@ -47,11 +47,11 @@ const RANK_STYLE_NOTES = {
   normal:
     "keep Santa skin on the face and hands natural peach-toned, with a classic red hat, white beard, and warm red clothing",
   bronze:
-    "keep Santa skin on the face and hands natural peach-toned, never metallic bronze, keep the beard and mustache white, use the bronze reference only for the hat styling, keep the outfit in bronze-inspired warm brown, copper, muted red, and cream tones, avoid a full bronze statue look",
+    "keep Santa skin on the face and hands natural peach-toned, keep the beard and mustache white, use the bronze reference only for the hat styling, make the outfit brown only, coat and sleeves in brown, avoid a full bronze statue look",
   silver:
-    "keep Santa skin on the face and hands natural peach-toned, never metallic silver, keep the beard and mustache white, use the silver reference only for the hat styling, make the outfit clearly silver-themed with silver, white, pale blue, and cool blue-gray clothing, remove red from the outfit, make the coat and sleeves visibly read as silver or blue-toned, avoid a full silver statue look",
+    "keep Santa skin on the face and hands natural peach-toned, keep the beard and mustache white, use the silver reference only for the hat styling, make the outfit blue-gray only, coat and sleeves in blue-gray, remove red from the outfit, avoid a full silver statue look",
   gold:
-    "keep Santa skin on the face and hands natural peach-toned, never metallic gold, keep the beard and mustache white, use the gold reference only for the hat styling, make the outfit clearly gold-themed with yellow, golden, orange, amber, and warm cream clothing, remove red from the outfit, make the coat and sleeves visibly read as gold or orange-toned, avoid a full gold statue look",
+    "keep Santa skin on the face and hands natural peach-toned, keep the beard and mustache white, use the gold reference only for the hat styling, make the outfit yellow only, coat and sleeves in yellow, remove red from the outfit, avoid a full gold statue look",
 };
 const BASE_PROMPT = [
   "use image 1 as the main reference for the exact room composition",

@@ -7,5 +7,5 @@ export const RED_SANTA: Santa = {
   emoji: "🎅",
 };
 
-export const MEDAL_SANTA_IDS: number[] = Array.from({ length: 10 }, (_, index) => index + 1);
-export const MEDAL_MAX_COUNT = MEDAL_SANTA_IDS.length;
+export const RANK_SANTA_IDS: number[] = Array.from({ length: 10 }, (_, index) => index + 1);
+export const RANK_MAX_COUNT = RANK_SANTA_IDS.length;

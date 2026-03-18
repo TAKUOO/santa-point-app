@@ -9,10 +9,15 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { getCurrentMedalRank } from "../../constants/medals";
-import { getRoomSceneSource } from "../../constants/roomScenes";
+import { getCurrentRank } from "../../constants/ranks";
+import { getRoomScenePresentation, getRoomSceneSource } from "../../constants/roomScenes";
 import { Child } from "../../types";
-import { daysUntilChristmas, getRoomTimeSlot, RoomTimeSlot } from "../../services/santa";
+import {
+  daysUntilChristmas,
+  getChildRankCount,
+  getRoomTimeSlot,
+  RoomTimeSlot,
+} from "../../services/santa";
 import { EmojiIcon } from "../common/EmojiIcon";
 import { ProfileTabs } from "./ProfileTabs";
 import { StatsBadges } from "./StatsBadges";
@@ -37,7 +42,14 @@ const HIT_SANTA_FRAME = {
 type Props = {
   activeChild: Child;
   children: Child[];
+  debugPreviewRankCount?: number | null;
+  debugRoomTimeSlot?: RoomTimeSlot | null;
   unreadCount: number;
+  onDebugOpenLetters?: () => void;
+  onDebugOpenTalk?: () => void;
+  onDebugResetPreview?: () => void;
+  onDebugSelectRank?: (rankCount: number | null) => void;
+  onDebugSelectTimeSlot?: (timeSlot: RoomTimeSlot | null) => void;
   onDebugShowRankUp?: () => void;
   onRemoveWishlistItem: (item: string) => void;
   onOpenLetters: () => void;
@@ -49,7 +61,15 @@ type Props = {
 export function HomeScreen({
   activeChild,
   children,
+  debugPreviewRankCount,
+  debugRoomTimeSlot,
   unreadCount,
+  onDebugOpenLetters,
+  onDebugOpenTalk,
+  onDebugResetPreview,
+  onDebugSelectRank,
+  onDebugSelectTimeSlot,
+  onDebugShowRankUp,
   onRemoveWishlistItem,
   onOpenLetters,
   onOpenSettings,
@@ -61,12 +81,16 @@ export function HomeScreen({
   const { width: windowWidth } = useWindowDimensions();
 
   useEffect(() => {
+    if (debugRoomTimeSlot) {
+      setRoomTimeSlot(debugRoomTimeSlot);
+      return undefined;
+    }
     const updateRoomTimeSlot = () => setRoomTimeSlot(getRoomTimeSlot());
     const timer = setInterval(updateRoomTimeSlot, 60_000);
     updateRoomTimeSlot();
 
     return () => clearInterval(timer);
-  }, []);
+  }, [debugRoomTimeSlot]);
 
   const roomWidth = Math.min(windowWidth - ROOM_SIDE_PADDING * 2, ROOM_MAX_WIDTH);
   const roomHeight = roomWidth / ROOM_IMAGE_ASPECT_RATIO;
@@ -82,8 +106,10 @@ export function HomeScreen({
   };
 
   const isSantaSleeping = roomTimeSlot === "lateNight";
-  const currentRankId = getCurrentMedalRank(activeChild.medals.length).id;
+  const rankCount = getChildRankCount(activeChild);
+  const currentRankId = getCurrentRank(rankCount).id;
   const roomSceneSource = getRoomSceneSource(currentRankId, roomTimeSlot);
+  const roomScenePresentation = getRoomScenePresentation(currentRankId);
 
   return (
     <>
@@ -103,10 +129,71 @@ export function HomeScreen({
           <View style={styles.scrollInner}>
             <StatsBadges
               daysUntilChristmas={dayCount}
-              medalCount={activeChild.medals.length}
+              rankCount={rankCount}
               pointsThisYear={activeChild.pointsThisYear}
               inline
             />
+
+            {onDebugSelectRank ? (
+              <View style={styles.debugPanel}>
+                <View style={styles.debugHeader}>
+                  <Text style={styles.debugTitle}>Debug Preview</Text>
+                  <Pressable style={styles.debugGhostButton} onPress={onDebugResetPreview}>
+                    <Text style={styles.debugGhostButtonText}>実データへ戻す</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.debugLabel}>
+                  ランク {debugPreviewRankCount ?? rankCount} / 時間帯 {debugRoomTimeSlot ?? roomTimeSlot}
+                </Text>
+                <View style={styles.debugRow}>
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => {
+                    const selected = (debugPreviewRankCount ?? rankCount) === value;
+                    return (
+                      <Pressable
+                        key={`rank_${value}`}
+                        style={[styles.debugChip, selected ? styles.debugChipActive : null]}
+                        onPress={() => onDebugSelectRank(value)}
+                      >
+                        <Text
+                          style={[styles.debugChipText, selected ? styles.debugChipTextActive : null]}
+                        >
+                          R{value}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <View style={styles.debugRow}>
+                  {(["lateNight", "morning", "daytime", "night"] as RoomTimeSlot[]).map((slot) => {
+                    const selected = (debugRoomTimeSlot ?? roomTimeSlot) === slot;
+                    return (
+                      <Pressable
+                        key={slot}
+                        style={[styles.debugChip, selected ? styles.debugChipActive : null]}
+                        onPress={() => onDebugSelectTimeSlot?.(slot)}
+                      >
+                        <Text
+                          style={[styles.debugChipText, selected ? styles.debugChipTextActive : null]}
+                        >
+                          {slot}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <View style={styles.debugActions}>
+                  <Pressable style={styles.debugActionButton} onPress={onDebugOpenTalk}>
+                    <Text style={styles.debugActionText}>会話確認</Text>
+                  </Pressable>
+                  <Pressable style={styles.debugActionButton} onPress={onDebugOpenLetters}>
+                    <Text style={styles.debugActionText}>手紙確認</Text>
+                  </Pressable>
+                  <Pressable style={styles.debugActionButton} onPress={onDebugShowRankUp}>
+                    <Text style={styles.debugActionText}>演出確認</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
 
             {unreadCount > 0 ? (
               <View style={[styles.letterBubbleWrapper, { marginTop: STATS_TO_LETTER_GAP }]}>
@@ -129,7 +216,14 @@ export function HomeScreen({
               <View style={styles.roomContainer}>
                 <Image
                   source={roomSceneSource}
-                  style={[styles.roomImage, { width: roomWidth, height: roomHeight }]}
+                  style={[
+                    styles.roomImage,
+                    {
+                      width: roomWidth,
+                      height: roomHeight,
+                      transform: [{ scale: roomScenePresentation.scale }],
+                    },
+                  ]}
                 />
                 <Pressable
                   style={[styles.hitSanta, hitSantaStyle]}
@@ -185,6 +279,85 @@ const styles = StyleSheet.create({
   scrollInner: {
     paddingHorizontal: 0,
   },
+  debugPanel: {
+    marginTop: 18,
+    marginHorizontal: 14,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: "#09111DB8",
+    borderWidth: 1,
+    borderColor: "#67A8FF33",
+    gap: 10,
+  },
+  debugHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  debugTitle: {
+    color: "#9FC5FF",
+    fontSize: 13,
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  debugGhostButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF14",
+  },
+  debugGhostButtonText: {
+    color: "#FFFFFFCC",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
+  debugLabel: {
+    color: "#FFFFFFAA",
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
+  debugRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  debugChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF10",
+    borderWidth: 1,
+    borderColor: "#FFFFFF18",
+  },
+  debugChipActive: {
+    backgroundColor: "#67A8FF22",
+    borderColor: "#67A8FF88",
+  },
+  debugChipText: {
+    color: "#FFFFFFAA",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  debugChipTextActive: {
+    color: "#D9E9FF",
+  },
+  debugActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  debugActionButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF14",
+  },
+  debugActionText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
   letterBubbleWrapper: {
     alignItems: "center",
     paddingHorizontal: 14,
@@ -214,7 +387,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 3,
   },
-  roomImage: {},
+  roomImage: {
+    resizeMode: "contain",
+  },
   hitSanta: {
     position: "absolute",
     zIndex: 4,

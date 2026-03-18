@@ -1,21 +1,21 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmojiIcon } from "../common/EmojiIcon";
-import { getCurrentMedalRank } from "../../constants/medals";
+import { getCurrentRank } from "../../constants/ranks";
 
 type Props = {
   daysUntilChristmas: number;
-  medalCount: number;
+  rankCount: number;
   pointsThisYear: number;
   inline?: boolean;
 };
 
 export function StatsBadges({
   daysUntilChristmas,
-  medalCount,
+  rankCount,
   pointsThisYear,
   inline,
 }: Props) {
-  const currentRank = getCurrentMedalRank(medalCount);
+  const currentRank = getCurrentRank(rankCount);
 
   return (
     <View style={[styles.statusBlock, inline && styles.statusBlockInline]}>

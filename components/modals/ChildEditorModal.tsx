@@ -26,7 +26,7 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
   useEffect(() => {
     if (child && visible) {
       setName(child.name);
-      setBirthdate(child.birthdate);
+      setBirthdate(formatBirthdateInput(child.birthdate));
     }
   }, [child, visible]);
 
@@ -38,12 +38,13 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
       Alert.alert("名前を入力してください");
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
-      Alert.alert("誕生日の形式", "YYYY-MM-DD で入力してください");
+    const normalizedBirthdate = normalizeBirthdateForSave(birthdate);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedBirthdate)) {
+      Alert.alert("誕生日の形式", "YYYY/MM/DD で入力してください");
       return;
     }
 
-    onSave(child.id, name.trim(), birthdate);
+    onSave(child.id, name.trim(), normalizedBirthdate);
     onClose();
   }
 
@@ -71,10 +72,12 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
             <Text style={styles.label}>誕生日</Text>
             <TextInput
               value={birthdate}
-              onChangeText={setBirthdate}
-              placeholder="YYYY-MM-DD"
+              onChangeText={(value) => setBirthdate(formatBirthdateInput(value))}
+              placeholder="YYYY/MM/DD"
               placeholderTextColor="#FFFFFF44"
               style={styles.input}
+              keyboardType="number-pad"
+              maxLength={10}
             />
             <Text style={styles.helpText}>
               担当サンタはそのままで、お子様情報だけを更新します
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFFFFF22",
     fontFamily: "Inter_500Medium",
-    fontSize: 15,
+    fontSize: 16,
   },
   helpText: {
     color: "#FFFFFF88",
@@ -171,3 +174,24 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_700Bold",
   },
 });
+
+function formatBirthdateInput(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 4) {
+    return digits;
+  }
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 4)}/${digits.slice(4)}`;
+  }
+  return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
+}
+
+function normalizeBirthdateForSave(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 8) {
+    return value;
+  }
+
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+}

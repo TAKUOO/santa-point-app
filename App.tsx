@@ -19,19 +19,26 @@ import { RankUpCelebrationModal } from "./components/modals/RankUpCelebrationMod
 import { SettingsModal } from "./components/modals/SettingsModal";
 import { TalkModal } from "./components/modals/TalkModal";
 import { ChildEditorModal } from "./components/modals/ChildEditorModal";
-import { MEDAL_SANTA_IDS } from "./constants/santas";
-import { calculateMedalCount, getCurrentMedalRank } from "./constants/medals";
+import { LegalDocumentScreen } from "./components/screens/LegalDocumentScreen";
+import { RANK_SANTA_IDS } from "./constants/santas";
+import { calculateRankCount, getCurrentRank } from "./constants/ranks";
+import { LegalDocumentId } from "./constants/legalDocuments";
 import {
   assignSanta,
-  createDemoLetters,
+  buildSantaReply,
+  createInitialLetter,
   extractWishlistItem,
   createInitialChatHistory,
   createInitialWishlist,
   createUniqueId,
+  getAssignedSantaForRankCount,
+  getChildRankCount,
   getRandomPoints,
+  RoomTimeSlot,
   normalizeChildForCurrentYear,
+  syncChildAssignedSanta,
 } from "./services/santa";
-import { pickSantaReplyClipId, SANTA_VOICE_TEXTS } from "./constants/santaVoicePack";
+import { pickSantaReplyClipId } from "./constants/santaVoicePack";
 import {
   clearStoredAppData,
   loadActiveChildId,
@@ -43,12 +50,13 @@ import { createLocalSantaAudioToken, stopSantaSpeech } from "./services/tts";
 import { ChatMessage, Child } from "./types";
 
 type ActiveModal = "talk" | "letters" | null;
-type ActiveScreen = "home" | "settings";
+type ActiveScreen = "home" | "settings" | LegalDocumentId;
 type PendingRankUp = {
   childId: string;
-  medalCount: number;
+  rankCount: number;
   rankName: string;
 };
+const SHOW_DEBUG_PREVIEW = false;
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -67,6 +75,8 @@ export default function App() {
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [pendingEditChildId, setPendingEditChildId] = useState<string | null>(null);
   const [pendingRankUp, setPendingRankUp] = useState<PendingRankUp | null>(null);
+  const [debugPreviewRankCount, setDebugPreviewRankCount] = useState<number | null>(null);
+  const [debugRoomTimeSlot, setDebugRoomTimeSlot] = useState<RoomTimeSlot | null>(null);
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -154,21 +164,36 @@ export default function App() {
     () => children.find((child) => child.id === editingChildId) ?? null,
     [children, editingChildId],
   );
+  const displayChild = useMemo(() => {
+    if (!activeChild) {
+      return null;
+    }
+
+    if (debugPreviewRankCount === null) {
+      return activeChild;
+    }
+
+    return syncChildAssignedSanta({
+      ...activeChild,
+      assignedSanta: getAssignedSantaForRankCount(debugPreviewRankCount),
+      ranks: RANK_SANTA_IDS.slice(0, debugPreviewRankCount),
+    });
+  }, [activeChild, debugPreviewRankCount]);
   const handleDismissRankUpCelebration = useCallback(() => {
     setPendingRankUp(null);
   }, []);
 
   const handleDebugShowRankUp = useCallback(() => {
-    if (!activeChild) return;
-    const nextMedalCount = Math.min(activeChild.medals.length + 1, 10);
+    if (!displayChild) return;
+    const nextRankCount = Math.min(getChildRankCount(displayChild) + 1, 10);
     setPendingRankUp({
-      childId: activeChild.id,
-      medalCount: nextMedalCount,
-      rankName: getCurrentMedalRank(nextMedalCount).name,
+      childId: displayChild.id,
+      rankCount: nextRankCount,
+      rankName: getCurrentRank(nextRankCount).name,
     });
-  }, [activeChild]);
+  }, [displayChild]);
 
-  const unreadCount = activeChild?.letters.filter((letter) => !letter.isRead).length ?? 0;
+  const unreadCount = displayChild?.letters.filter((letter) => !letter.isRead).length ?? 0;
 
   function handleCreateChild(name: string, birthdate: string) {
     const santa = assignSanta(name, birthdate);
@@ -179,10 +204,10 @@ export default function App() {
       assignedSanta: santa,
       pointsThisYear: 0,
       pointsAllTime: 0,
-      medals: [],
+      ranks: [],
       wishlist: createInitialWishlist(),
       chatHistory: createInitialChatHistory(santa),
-      letters: createDemoLetters(name, santa),
+      letters: [createInitialLetter(name, santa)],
       lastResetYear: new Date().getFullYear(),
     };
 
@@ -224,8 +249,8 @@ export default function App() {
     const points = getRandomPoints();
     const wishlistCandidate = extractWishlistItem(text);
     const nextAllTime = normalizedActiveChild.pointsAllTime + points;
-    const nextMedalCount = calculateMedalCount(nextAllTime);
-    const nextMedals = MEDAL_SANTA_IDS.slice(0, nextMedalCount);
+    const nextRankCount = calculateRankCount(nextAllTime);
+    const nextRanks = RANK_SANTA_IDS.slice(0, nextRankCount);
     const childMessage: ChatMessage = {
       id: createUniqueId("chat"),
       role: "child",
@@ -235,7 +260,8 @@ export default function App() {
     const wishlistAdded =
       !!wishlistCandidate && !normalizedActiveChild.wishlist.includes(wishlistCandidate);
     const santaClipId = pickSantaReplyClipId(points, wishlistAdded);
-    const santaDisplayText = SANTA_VOICE_TEXTS[santaClipId];
+    const syncedActiveChild = syncChildAssignedSanta(normalizedActiveChild);
+    const santaDisplayText = buildSantaReply(syncedActiveChild, text, points, wishlistAdded);
     const santaSpeechText = createLocalSantaAudioToken(santaClipId);
     const santaMessage: ChatMessage = {
       id: createUniqueId("chat"),
@@ -245,11 +271,11 @@ export default function App() {
       timestamp: new Date().toISOString(),
     };
 
-    if (nextMedalCount > normalizedActiveChild.medals.length) {
+    if (nextRankCount > getChildRankCount(syncedActiveChild)) {
       setPendingRankUp({
-        childId: normalizedActiveChild.id,
-        medalCount: nextMedalCount,
-        rankName: getCurrentMedalRank(nextMedalCount).name,
+        childId: syncedActiveChild.id,
+        rankCount: nextRankCount,
+        rankName: getCurrentRank(nextRankCount).name,
       });
     }
 
@@ -260,17 +286,18 @@ export default function App() {
         }
 
         const nextWishlist = wishlistAdded
-          ? [...normalizedActiveChild.wishlist, wishlistCandidate!]
-          : normalizedActiveChild.wishlist;
-
-        return {
-          ...normalizedActiveChild,
-          pointsThisYear: normalizedActiveChild.pointsThisYear + points,
+          ? [...syncedActiveChild.wishlist, wishlistCandidate!]
+          : syncedActiveChild.wishlist;
+        const nextChild = syncChildAssignedSanta({
+          ...syncedActiveChild,
+          pointsThisYear: syncedActiveChild.pointsThisYear + points,
           pointsAllTime: nextAllTime,
-          medals: nextMedals,
+          ranks: nextRanks,
           wishlist: nextWishlist,
-          chatHistory: [...normalizedActiveChild.chatHistory, childMessage, santaMessage],
-        };
+          chatHistory: [...syncedActiveChild.chatHistory, childMessage, santaMessage],
+        });
+
+        return nextChild;
       }),
     );
 
@@ -336,10 +363,6 @@ export default function App() {
         },
       ],
     );
-  }
-
-  function showStubAlert(title: string) {
-    Alert.alert(title, "このきのうはじゅんびちゅうです");
   }
 
   function handleDeleteAccount() {
@@ -431,21 +454,31 @@ export default function App() {
 
       {isOnboarding ? (
         <OnboardingFlow onCreateChild={handleCreateChild} />
-      ) : activeChild ? (
+      ) : activeChild && displayChild ? (
         <>
           {activeScreen === "home" ? (
             <HomeScreen
-              activeChild={activeChild}
+              activeChild={displayChild}
               children={children}
+              debugPreviewRankCount={__DEV__ && SHOW_DEBUG_PREVIEW ? debugPreviewRankCount : undefined}
+              debugRoomTimeSlot={__DEV__ && SHOW_DEBUG_PREVIEW ? debugRoomTimeSlot : undefined}
               unreadCount={unreadCount}
-              onDebugShowRankUp={__DEV__ ? handleDebugShowRankUp : undefined}
+              onDebugOpenLetters={__DEV__ && SHOW_DEBUG_PREVIEW ? () => setActiveModal("letters") : undefined}
+              onDebugOpenTalk={__DEV__ && SHOW_DEBUG_PREVIEW ? () => setActiveModal("talk") : undefined}
+              onDebugResetPreview={__DEV__ && SHOW_DEBUG_PREVIEW ? () => {
+                setDebugPreviewRankCount(null);
+                setDebugRoomTimeSlot(null);
+              } : undefined}
+              onDebugSelectRank={__DEV__ && SHOW_DEBUG_PREVIEW ? setDebugPreviewRankCount : undefined}
+              onDebugSelectTimeSlot={__DEV__ && SHOW_DEBUG_PREVIEW ? setDebugRoomTimeSlot : undefined}
+              onDebugShowRankUp={__DEV__ && SHOW_DEBUG_PREVIEW ? handleDebugShowRankUp : undefined}
               onRemoveWishlistItem={handleRemoveWishlistItem}
               onOpenLetters={() => setActiveModal("letters")}
               onOpenSettings={() => setActiveScreen("settings")}
               onOpenTalk={() => setActiveModal("talk")}
               onSelectChild={handleSelectChild}
             />
-          ) : (
+          ) : activeScreen === "settings" ? (
             <SettingsModal
               children={children}
               onClose={() => setActiveScreen("home")}
@@ -453,18 +486,23 @@ export default function App() {
               onDeleteChild={handleDeleteChild}
               onEditChild={handleStartEditChild}
               onDeleteAccount={handleDeleteAccount}
-              onShowStub={showStubAlert}
+              onOpenLegalDocument={setActiveScreen}
+            />
+          ) : (
+            <LegalDocumentScreen
+              documentId={activeScreen}
+              onClose={() => setActiveScreen("settings")}
             />
           )}
 
           <TalkModal
-            child={activeChild}
+            child={displayChild}
             visible={activeModal === "talk"}
             onClose={() => setActiveModal(null)}
             onSend={handleSendReport}
           />
           <RankUpCelebrationModal
-            medalCount={pendingRankUp?.medalCount ?? 0}
+            rankCount={pendingRankUp?.rankCount ?? 0}
             rankName={pendingRankUp?.rankName ?? ""}
             visible={
               activeScreen === "home" &&
@@ -474,7 +512,7 @@ export default function App() {
             onClose={handleDismissRankUpCelebration}
           />
           <LetterModal
-            child={activeChild}
+            child={displayChild}
             visible={activeModal === "letters"}
             onClose={() => setActiveModal(null)}
             onMarkRead={handleMarkLetterRead}

@@ -1,6 +1,9 @@
 import { RoomTimeSlot } from "../services/santa";
 
 export type AvailableRoomRankKey = "normal" | "bronze" | "silver" | "gold";
+export type RoomScenePresentation = {
+  scale: number;
+};
 
 const ROOM_SCENES: Record<AvailableRoomRankKey, Record<RoomTimeSlot, number>> = {
   normal: {
@@ -45,4 +48,15 @@ export function getAvailableRoomRankKey(rankId: number): AvailableRoomRankKey {
 export function getRoomSceneSource(rankId: number, timeSlot: RoomTimeSlot): number {
   const roomRankKey = getAvailableRoomRankKey(rankId);
   return ROOM_SCENES[roomRankKey][timeSlot];
+}
+
+export function getRoomScenePresentation(rankId: number): RoomScenePresentation {
+  const roomRankKey = getAvailableRoomRankKey(rankId);
+
+  switch (roomRankKey) {
+    case "normal":
+      return { scale: 0.96 };
+    default:
+      return { scale: 1 };
+  }
 }

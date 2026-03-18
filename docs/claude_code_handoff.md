@@ -94,8 +94,8 @@ santa-point-app/
 │   ├── storage.ts         # AsyncStorage CRUD
 │   └── dataTransfer.ts    # JSON エクスポート/インポート
 ├── constants/
-│   ├── santas.ts          # 赤いサンタ＋メダル用10体
-│   └── medals.ts          # ランク閾値・メダル内サンタ定義
+│   ├── santas.ts          # 赤いサンタ＋ランク用10体
+│   └── ranks.ts           # ランク閾値・ランク別サンタ定義
 └── types/
     └── index.ts           # 型定義
 ```
@@ -119,7 +119,7 @@ export type Child = {
   assignedSanta: Santa;
   pointsThisYear: number;   // 毎年1/1リセット
   pointsAllTime: number;    // 累計・リセットなし
-  medals: number[];         // 取得済みサンタID配列
+  ranks: number[];          // 到達済みランクID配列
   wishlist: string[];
   chatHistory: ChatMessage[];
   letters: Letter[];
@@ -198,9 +198,9 @@ const systemPrompt = (child: Child) => `
 - `pointsThisYear` と `pointsAllTime` 両方に加算
 - 毎年1/1: `pointsThisYear` をリセット（`pointsAllTime` はそのまま）
 
-### メダル付与閾値（累計ポイント）
+### ランク到達閾値（累計ポイント）
 ```typescript
-const MEDAL_THRESHOLDS = [
+const RANK_THRESHOLDS = [
   10, 25, 50, 80, 120, 170, 230, 300,      // 1〜8枚目
   380, 470, 570, 680, 800, 930, 1070,       // 9〜15枚目
   // 以降50ptごとに1枚（16枚目〜100枚目）

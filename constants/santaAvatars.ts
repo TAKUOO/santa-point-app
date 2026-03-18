@@ -1,11 +1,12 @@
 import { ImageSourcePropType } from "react-native";
-import { getCurrentMedalRank } from "./medals";
+import { getCurrentRank } from "./ranks";
 
 const NORMAL_SANTA = require("../assets/rooms/santas/normal-santa.png");
 const BRONZE_SANTA = require("../assets/rooms/santas/bronze-santa.png");
 const SILVER_SANTA = require("../assets/rooms/santas/silver-santa.png");
 const GOLD_SANTA = require("../assets/rooms/santas/gold-santa.png");
 const PLATINUM_SANTA = require("../assets/rooms/santas/platinum-santa.png");
+const SAPPHIRE_SANTA = require("../assets/rooms/santas/sapphire-santa.png");
 const EMERALD_SANTA = require("../assets/rooms/santas/emerald-santa.png");
 const RUBY_SANTA = require("../assets/rooms/santas/ruby-santa.png");
 // NOTE: ファイル名が daiamond-santa.png になっているため、現状はそれに合わせる
@@ -25,8 +26,7 @@ export function getSantaAvatarSourceForRankId(rankId: number): ImageSourcePropTy
     case 5:
       return PLATINUM_SANTA;
     case 6:
-      // サファイア画像が未用意の場合はノーマルにフォールバック
-      return NORMAL_SANTA;
+      return SAPPHIRE_SANTA;
     case 7:
       return RUBY_SANTA;
     case 8:
@@ -40,8 +40,7 @@ export function getSantaAvatarSourceForRankId(rankId: number): ImageSourcePropTy
   }
 }
 
-export function getSantaAvatarSourceForMedalCount(medalCount: number): ImageSourcePropType {
-  const rank = getCurrentMedalRank(medalCount);
+export function getSantaAvatarSourceForRankCount(rankCount: number): ImageSourcePropType {
+  const rank = getCurrentRank(rankCount);
   return getSantaAvatarSourceForRankId(rank.id);
 }
-

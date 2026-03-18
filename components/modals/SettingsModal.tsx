@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Child } from "../../types";
+import { LegalDocumentId } from "../../constants/legalDocuments";
 
 type Props = {
   children: Child[];
@@ -15,7 +16,7 @@ type Props = {
   onDeleteChild: (childId: string) => void;
   onEditChild: (childId: string) => void;
   onDeleteAccount: () => void;
-  onShowStub: (title: string) => void;
+  onOpenLegalDocument: (documentId: LegalDocumentId) => void;
 };
 
 // リリース時は不要のためコメントアウト
@@ -30,11 +31,11 @@ export function SettingsModal({
   onDeleteChild,
   onEditChild,
   onDeleteAccount,
-  onShowStub,
+  onOpenLegalDocument,
 }: Props) {
   const legalItems = [
-    { title: "利用規約", onPress: () => onShowStub("利用規約") },
-    { title: "プライバシーポリシー", onPress: () => onShowStub("プライバシーポリシー") },
+    { title: "利用規約", onPress: () => onOpenLegalDocument("terms") },
+    { title: "プライバシーポリシー", onPress: () => onOpenLegalDocument("privacy") },
   ];
 
   return (

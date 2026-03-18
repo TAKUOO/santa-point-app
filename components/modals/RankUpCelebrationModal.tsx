@@ -1,18 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { getCurrentMedalRank } from "../../constants/medals";
-import { getSantaAvatarSourceForMedalCount } from "../../constants/santaAvatars";
+import { getSantaAvatarSourceForRankCount } from "../../constants/santaAvatars";
 
 type Props = {
-  medalCount: number;
+  rankCount: number;
   rankName: string;
   visible: boolean;
   onClose: () => void;
 };
 
-export function RankUpCelebrationModal({ medalCount, rankName, visible, onClose }: Props) {
-  const santaImage = getSantaAvatarSourceForMedalCount(medalCount);
-  const previousRankName = getCurrentMedalRank(Math.max(0, medalCount - 1)).name;
+export function RankUpCelebrationModal({ rankCount, rankName, visible, onClose }: Props) {
+  const [displayRankCount, setDisplayRankCount] = useState(rankCount);
+  const [displayRankName, setDisplayRankName] = useState(rankName);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    setDisplayRankCount(rankCount);
+    setDisplayRankName(rankName);
+  }, [rankCount, rankName, visible]);
+
+  const santaImage = getSantaAvatarSourceForRankCount(displayRankCount);
 
   useEffect(() => {
     if (!visible) {
@@ -35,7 +45,7 @@ export function RankUpCelebrationModal({ medalCount, rankName, visible, onClose 
             <Image source={santaImage} style={styles.avatarImage} />
           </View>
           <Text style={styles.message}>
-           {rankName}サンタになりました
+            {displayRankName}サンタになりました
           </Text>
         </View>
       </Pressable>

@@ -19,7 +19,8 @@ import {
 } from "react-native";
 import { EmojiIcon } from "../common/EmojiIcon";
 import { Child } from "../../types";
-import { getSantaAvatarSourceForMedalCount } from "../../constants/santaAvatars";
+import { getSantaAvatarSourceForRankCount } from "../../constants/santaAvatars";
+import { getChildRankCount } from "../../services/santa";
 import { speakSantaReply, stopSantaSpeech } from "../../services/tts";
 
 type Props = {
@@ -42,7 +43,7 @@ export function TalkModal({ child, visible, onClose, onSend }: Props) {
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const speakAnim = useRef(new Animated.Value(1)).current;
-  const santaAvatarSource = getSantaAvatarSourceForMedalCount(child.medals.length);
+  const santaAvatarSource = getSantaAvatarSourceForRankCount(getChildRankCount(child));
 
   useEffect(() => {
     if (!isSantaSpeaking) {

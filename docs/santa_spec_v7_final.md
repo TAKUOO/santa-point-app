@@ -296,7 +296,7 @@ Status: ✅ 確定・実装準備完了
       "assignedSanta": { "id": 1, "name": "ノーマルサンタ" },
       "pointsThisYear": 180,
       "pointsAllTime": 540,
-      "medals": [1, 3, 5],
+      "ranks": [1, 3, 5],
       "wishlist": ["ゲームソフト", "プリンセスのドレス"],
       "chatHistory": [],
       "letters": []

@@ -20,6 +20,8 @@ export type Letter = {
   to: "child" | "parent";
   date: string;
   isRead: boolean;
+  kind?: "welcome" | "monthly" | "event";
+  periodKey?: string;
 };
 
 export type Child = {
@@ -29,7 +31,7 @@ export type Child = {
   assignedSanta: Santa;
   pointsThisYear: number;
   pointsAllTime: number;
-  medals: number[];
+  ranks: number[];
   wishlist: string[];
   chatHistory: ChatMessage[];
   letters: Letter[];
