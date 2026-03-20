@@ -68,6 +68,7 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
               placeholder="名前"
               placeholderTextColor="#FFFFFF44"
               style={styles.input}
+              allowFontScaling={false}
             />
             <Text style={styles.label}>誕生日</Text>
             <TextInput
@@ -76,6 +77,7 @@ export function ChildEditorModal({ child, visible, onClose, onSave }: Props) {
               placeholder="YYYY/MM/DD"
               placeholderTextColor="#FFFFFF44"
               style={styles.input}
+              allowFontScaling={false}
               keyboardType="number-pad"
               maxLength={10}
             />
@@ -147,12 +149,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF14",
     color: "#FFFFFF",
     borderRadius: 12,
+    height: 52,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 0,
     borderWidth: 1,
     borderColor: "#FFFFFF22",
     fontFamily: "Inter_500Medium",
     fontSize: 16,
+    lineHeight: 20,
   },
   helpText: {
     color: "#FFFFFF88",

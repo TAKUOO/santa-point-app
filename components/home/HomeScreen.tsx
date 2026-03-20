@@ -259,6 +259,12 @@ export function HomeScreen({
             {isSantaSleeping ? "サンタは寝ているよ" : "サンタさんとはなす"}
           </Text>
         </Pressable>
+
+        {!onDebugSelectRank && onDebugShowRankUp ? (
+          <Pressable style={styles.debugRankupTrigger} onPress={onDebugShowRankUp}>
+            <Text style={styles.debugRankupTriggerText}>演出</Text>
+          </Pressable>
+        ) : null}
       </View>
     </>
   );
@@ -416,5 +422,21 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontFamily: "PlusJakartaSans_700Bold",
+  },
+  debugRankupTrigger: {
+    position: "absolute",
+    right: 18,
+    bottom: 98,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF18",
+    borderWidth: 1,
+    borderColor: "#FFFFFF22",
+  },
+  debugRankupTriggerText: {
+    color: "#FFFFFFCC",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
 });

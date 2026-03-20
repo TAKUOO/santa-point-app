@@ -57,6 +57,7 @@ type PendingRankUp = {
   rankName: string;
 };
 const SHOW_DEBUG_PREVIEW = false;
+const SHOW_DEBUG_RANKUP_TRIGGER = false;
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -471,7 +472,11 @@ export default function App() {
               } : undefined}
               onDebugSelectRank={__DEV__ && SHOW_DEBUG_PREVIEW ? setDebugPreviewRankCount : undefined}
               onDebugSelectTimeSlot={__DEV__ && SHOW_DEBUG_PREVIEW ? setDebugRoomTimeSlot : undefined}
-              onDebugShowRankUp={__DEV__ && SHOW_DEBUG_PREVIEW ? handleDebugShowRankUp : undefined}
+              onDebugShowRankUp={
+                __DEV__ && (SHOW_DEBUG_PREVIEW || SHOW_DEBUG_RANKUP_TRIGGER)
+                  ? handleDebugShowRankUp
+                  : undefined
+              }
               onRemoveWishlistItem={handleRemoveWishlistItem}
               onOpenLetters={() => setActiveModal("letters")}
               onOpenSettings={() => setActiveScreen("settings")}
